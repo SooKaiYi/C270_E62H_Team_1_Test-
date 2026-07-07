@@ -1,0 +1,46 @@
+<%- include('../partials/header') %>
+
+<section class="page-heading d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h1 class="fw-bold mb-1">Transaction History</h1>
+        <p class="mb-0">Review your top ups, pass purchases, and wallet balance changes.</p>
+    </div>
+    <a href="/wallet" class="btn btn-light btn-sm">Back to Wallet</a>
+</section>
+
+<section class="content-panel">
+    <% if (transactions.length === 0) { %>
+        <p class="text-muted mb-0">No wallet transactions found.</p>
+    <% } else { %>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Transaction Type</th>
+                        <th>Amount</th>
+                        <th>Balance After</th>
+                        <th>Date and Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% transactions.forEach((transaction) => { %>
+                        <tr>
+                            <td class="fw-semibold"><%= transaction.type %></td>
+                            <td><%= transactionSign(transaction.type) %><%= formatCurrency(transaction.amount) %></td>
+                            <td><%= formatCurrency(transaction.balanceAfter) %></td>
+                            <td><%= formatDateTime(transaction.timestamp) %></td>
+                            <td>
+                                <span class="badge <%= transaction.status === 'Success' ? 'text-bg-success' : 'text-bg-danger' %>">
+                                    <%= transaction.status %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</section>
+
+<%- include('../partials/footer') %>

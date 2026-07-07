@@ -1,0 +1,23 @@
+---
+- name: Deploy C270 Bike Rental Wallet locally
+  hosts: local
+  gather_facts: false
+
+  tasks:
+    - name: Stop existing app container if it exists
+      ansible.builtin.command: docker rm -f c270-bike-rental-wallet
+      ignore_errors: true
+
+    - name: Build Docker image
+      ansible.builtin.command: docker build -t c270-bike-rental-wallet:latest .
+      args:
+        chdir: "{{ playbook_dir }}/.."
+
+    - name: Run Docker container
+      ansible.builtin.command: >
+        docker run -d
+        --name c270-bike-rental-wallet
+        -p 3000:3000
+        -e SESSION_SECRET=ansible-local-secret
+        -v {{ playbook_dir }}/../backend/data:/app/backend/data
+        c270-bike-rental-wallet:latest

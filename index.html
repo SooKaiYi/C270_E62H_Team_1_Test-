@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BikeRide Member Portal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Bike Rental</h1>
+    </header>
+
+    <div class="plans-container">
+        <h2>Choose a Ride Plan</h2>
+        <div class="plan-cards">
+            <div class="plan-card">
+                <h3>Single Trip</h3>
+                <p>$2.00 / ride</p>
+                <button onclick="buyPlan('Single Trip', 2)">Buy Now</button>
+            </div>
+            <div class="plan-card featured">
+                <h3>Day Pass</h3>
+                <p>$10.00 / day</p>
+                <button onclick="buyPlan('Day Pass', 10)">Buy Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="wallet-container">
+        <h2>My Wallet</h2>
+        <div class="balance-card">
+            <p>Available Credits</p>
+            <h1 id="display-balance">$0.00</h1>
+        </div>
+        <div class="topup-actions">
+            <input type="number" id="topup-amount" placeholder="10">
+            <button onclick="handleTopUp()">Add Credits</button>
+        </div>
+        <p id="message"></p>
+    </div>
+
+    <div class="activity-container">
+        <h3>Transaction History</h3>
+        <ul id="activity-list"></ul>
+        
+        <button id="toggle-history-btn" onclick="toggleHistory()" style="display: none; width: 100%; margin-top: 10px; background-color: #7f8c8d;">
+            View More
+        </button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

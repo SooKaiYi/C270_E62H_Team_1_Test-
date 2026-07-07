@@ -1,0 +1,14 @@
+<%- include('partials/header') %>
+
+<section class="auth-panel mx-auto">
+    <h1 class="h3 mb-3 text-center">Member Login</h1>
+    <form action="/login" method="POST">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="alice@example.com" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+    </form>
+</section>
+
+<%- include('partials/footer') %>
