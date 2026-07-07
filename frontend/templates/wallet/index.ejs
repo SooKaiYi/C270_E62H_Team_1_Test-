@@ -32,6 +32,23 @@
         </div>
     </section>
 
+    <section class="content-panel">
+        <% if (user && user.role === "admin") { %>
+            <h2 class="h4 panel-title">🔐 Admin Wallet Controls</h2>
+            <p class="text-muted">
+                Admin view: You can review wallet activity and monitor transactions.
+            </p>
+            <a href="/wallet/history" class="btn btn-outline-primary btn-sm">
+                View Wallet Transactions
+            </a>   
+        <% } else { %>
+            <h2 class="h4 panel-title">👤 Member Wallet</h2>
+            <p class="text-muted mb-0">
+                Member view: You can top up credits, buy ride passes, and view your own transaction history.
+            </p>
+        <% } %>
+    </section>
+
     <section class="action-grid">
         <a class="action-card" href="/wallet/topup">
             <div class="action-icon">➕</div>

@@ -11,6 +11,7 @@ router.get('/', async (req, res, next) => {
 
         res.render('wallet/index', {
             title: 'Wallet Dashboard',
+            user: req.session.user,
             wallet: dashboard.wallet,
             transactions: dashboard.transactions
         });
