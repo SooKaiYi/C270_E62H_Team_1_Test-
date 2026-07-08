@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rewards - CycleApp</title>
+    <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+    <!-- ========== SLIDE MENU (PROFILE SIDEBAR) ========== -->
+    <div id="menuOverlay" class="menu-overlay" onclick="closeMenu()"></div>
+    
+    <div id="slideMenu" class="slide-menu">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <span class="avatar-emoji">😎</span>
+            </div>
+            <!-- CLICKABLE NAME - Opens Profile Page -->
+            <h3 class="profile-name" onclick="openProfilePage()" style="cursor: pointer;">
+                <%= user.name %> 👆
+            </h3>
+            <p class="profile-points">⭐ <%= user.points %> points</p>
+            <button class="menu-close" onclick="closeMenu()">✕</button>
+        </div>
+
+        <!-- Menu Items (Only Refer) -->
+        <div class="menu-divider"></div>
+        <ul class="menu-items">
+            <li onclick="openRefer()">
+                <span class="menu-icon">👥</span>
+                Refer a Friend
+            </li>
+        </ul>
+    </div>
+
+    <!-- ========== PROFILE PAGE (FULL PAGE) ========== -->
+    <div id="profilePage" class="profile-page" style="display: none;">
+        <div class="profile-page-header">
+            <button class="back-btn" onclick="closeProfilePage()">← Back</button>
+            <h2>My Profile</h2>
+            <div style="width: 60px;"></div>
+        </div>
+
+        <div class="profile-page-content">
+            <!-- Avatar & Name -->
+            <div class="profile-page-avatar-section">
+                <div class="profile-page-avatar">
+                    <span>😎</span>
+                </div>
+                <h2><%= user.name %></h2>
+                <p class="profile-page-points">⭐ <%= user.points %> points</p>
+            </div>
+
+            <!-- All Details -->
+            <div class="profile-page-details">
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📧</span>
+                    <div>
+                        <span class="profile-page-label">Email</span>
+                        <span class="profile-page-value"><%= user.email %></span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📱</span>
+                    <div>
+                        <span class="profile-page-label">Phone</span>
+                        <span class="profile-page-value"><%= user.phone || '+65 9123 4567' %></span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📍</span>
+                    <div>
+                        <span class="profile-page-label">Location</span>
+                        <span class="profile-page-value"><%= user.location || 'Singapore' %></span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🎂</span>
+                    <div>
+                        <span class="profile-page-label">Member Since</span>
+                        <span class="profile-page-value"><%= user.memberSince || 'January 2026' %></span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🏆</span>
+                    <div>
+                        <span class="profile-page-label">Total Rides</span>
+                        <span class="profile-page-value"><%= user.rides %> rides</span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">⏱️</span>
+                    <div>
+                        <span class="profile-page-label">Total Time</span>
+                        <span class="profile-page-value"><%= Math.floor(user.totalMinutes / 60) %>h <%= user.totalMinutes % 60 %>m</span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🆓</span>
+                    <div>
+                        <span class="profile-page-label">Free Hours</span>
+                        <span class="profile-page-value"><%= user.freeHours %> hour(s)</span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">👥</span>
+                    <div>
+                        <span class="profile-page-label">Referral Code</span>
+                        <span class="profile-page-value code-value"><%= user.referralCode %></span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">👥</span>
+                    <div>
+                        <span class="profile-page-label">Friends Referred</span>
+                        <span class="profile-page-value"><%= user.friendsReferred || 0 %> friends</span>
+                    </div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🔑</span>
+                    <div>
+                        <span class="profile-page-label">Referred By</span>
+                        <span class="profile-page-value"><%= user.referredBy || 'None' %></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="profile-page-actions">
+                <button onclick="copyCode()" class="profile-action-btn">📋 Copy Referral Code</button>
+                <button onclick="closeProfilePage(); openRefer();" class="profile-action-btn secondary">👥 Refer a Friend</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div id="mainContent" class="container">
+
+        <!-- HEADER WITH MENU BUTTON -->
+        <header>
+            <div class="header-row">
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                <h1>⭐ Rewards</h1>
+                <div style="width: 40px;"></div>
+            </div>
+            <p>Welcome back, <strong><%= user.name %></strong>!</p>
+            <p class="subtitle">Ride more, earn more points automatically</p>
+        </header>
+
+        <!-- BALANCE CARD -->
+        <div class="balance-card">
+            <div class="balance">
+                <span class="label">Your Points</span>
+                <span class="amount" id="pointsDisplay"><%= user.points %></span>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: <%= progress %>%;"></div>
+                </div>
+                <span class="progress-text">
+                    <%= user.points %> / <%= nextReward %> pts to Free 1 Hour
+                </span>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-value"><%= user.freeHours %></span>
+                    <span class="stat-label">Free Hours</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value"><%= user.rides %></span>
+                    <span class="stat-label">Rides</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value"><%= Math.floor(user.totalMinutes / 60) %>h <%= user.totalMinutes % 60 %>m</span>
+                    <span class="stat-label">Total Time</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== REFERRAL SECTION (HIDDEN BY DEFAULT) ========== -->
+        <div id="referSection" class="refer-section" style="display: none;">
+            <div class="refer-header">
+                <h2>👥 Refer a Friend</h2>
+                <button class="close-refer" onclick="closeRefer()">✕</button>
+            </div>
+            
+            <div class="referral-box">
+                <div class="referral-code-display">
+                    <span>Your Code: <strong id="referralCode"><%= user.referralCode %></strong></span>
+                    <button onclick="copyCode()" class="btn-small">📋 Copy</button>
+                </div>
+                <p class="referral-info">
+                    🎁 First friend: <strong>20 points</strong><br>
+                    🎁 Each friend after: <strong>5 points</strong>
+                </p>
+            </div>
+
+            <div class="referral-box">
+                <p>Enter a friend's referral code to get <strong>5 bonus points</strong>:</p>
+                
+                <% if (user.referredBy) { %>
+                    <p style="color: #48bb78; font-weight: bold;">
+                        ✅ You already used a referral code from: <strong><%= user.referredBy %></strong>
+                    </p>
+                <% } else { %>
+                    <div class="referral-input-group">
+                        <input type="text" id="friendCode" placeholder="Enter code..." />
+                        <button onclick="submitReferral()">Redeem</button>
+                    </div>
+                    <div id="referralResult"></div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- RIDE SIMULATOR -->
+        <div class="calculator">
+            <h2>🧪 Test Ride Points</h2>
+            <p class="note">(This simulates what happens when tracking ends)</p>
+            <form action="/calculate" method="POST">
+                <div class="input-group">
+                    <input 
+                        type="number" 
+                        name="minutes" 
+                        placeholder="Enter ride minutes..." 
+                        step="0.1"
+                        min="1" 
+                        max="300" 
+                        required
+                    />
+                    <button type="submit">Calculate</button>
+                </div>
+            </form>
+
+            <% if (typeof pointsEarned !== 'undefined' && pointsEarned !== null) { %>
+                <div class="result <%= pointsEarned > 0 ? 'success' : 'warning' %>">
+                    <% if (pointsEarned > 0) { %>
+                        ✅ <strong><%= rideMinutes %> min</strong> → rounded down to <strong><%= calculationResult.roundedMinutes %> min</strong> → <strong><%= pointsEarned %> points</strong>
+                        <% if (calculationResult.roundedMinutes >= 60) { %>
+                            <br>⭐ Bonus: 15 points minimum for 1h+ rides applied!
+                        <% } %>
+                        <br><small>This would be added to your balance automatically</small>
+                    <% } else { %>
+                        ⚠️ <strong><%= rideMinutes %> min</strong> → rounded down to <strong><%= calculationResult.roundedMinutes %> min</strong> → <strong>0 points</strong>
+                        <br><small>Rides under 10 minutes earn no points</small>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- REWARDS REDEMPTION -->
+        <div class="rewards-section">
+            <h2>🎁 Redeem Rewards</h2>
+            <div class="reward-grid">
+                <div class="reward-card">
+                    <span class="icon">⏰</span>
+                    <h3>Free 30 Min</h3>
+                    <p>25 points</p>
+                    <button onclick="redeem(25)">Redeem</button>
+                </div>
+                <div class="reward-card highlight">
+                    <span class="icon">🕐</span>
+                    <h3>Free 1 Hour</h3>
+                    <p>50 points</p>
+                    <button onclick="redeem(50)">Redeem</button>
+                </div>
+                <div class="reward-card">
+                    <span class="icon">🕑</span>
+                    <h3>Free 2 Hours</h3>
+                    <p>100 points</p>
+                    <button onclick="redeem(100)">Redeem</button>
+                </div>
+            </div>
+            <div id="redeemMessage" class="redeem-message"></div>
+        </div>
+
+        <!-- TRANSACTION HISTORY -->
+        <div class="history">
+            <h2>📜 Recent Activity</h2>
+            <div class="transaction-list">
+                <% transactions.forEach(function(txn) { %>
+                    <div class="transaction <%= txn.type %>">
+                        <span class="icon"><%= txn.type === 'earned' ? '➕' : '➖' %></span>
+                        <span class="desc"><%= txn.desc %></span>
+                        <span class="date"><%= txn.date %></span>
+                        <span class="points <%= txn.type === 'earned' ? 'green' : 'red' %>">
+                            <%= txn.type === 'earned' ? '+' : '-' %><%= txn.points %>
+                        </span>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- INTEGRATION INFO -->
+        <div class="integration-info">
+            <h3>🔌 Tracking Integration</h3>
+            <p>When your tracking page ends a ride, send a POST request to:</p>
+            <code>POST /api/ride-complete</code>
+            <p>With body:</p>
+            <code>{ "minutes": 25.8 }</code>
+            <p class="note">The system will automatically round down and add points!</p>
+        </div>
+
+    </div>
+
+    <script>
+        // ========== PROFILE PAGE FUNCTIONS ==========
+        function openProfilePage() {
+            closeMenu();
+            document.getElementById('profilePage').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProfilePage() {
+            document.getElementById('profilePage').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.body.style.overflow = '';
+        }
+
+        // ========== SLIDE MENU FUNCTIONS ==========
+        function toggleMenu() {
+            const menu = document.getElementById('slideMenu');
+            const overlay = document.getElementById('menuOverlay');
+            menu.classList.toggle('open');
+            overlay.classList.toggle('show');
+            document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+        }
+
+        function closeMenu() {
+            const menu = document.getElementById('slideMenu');
+            const overlay = document.getElementById('menuOverlay');
+            menu.classList.remove('open');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function openRefer() {
+            closeMenu();
+            const referSection = document.getElementById('referSection');
+            if (referSection.style.display === 'none') {
+                referSection.style.display = 'block';
+                referSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                referSection.style.display = 'none';
+            }
+        }
+
+        function closeRefer() {
+            document.getElementById('referSection').style.display = 'none';
+        }
+
+        // ========== COPY REFERRAL CODE ==========
+        function copyCode() {
+            const code = document.getElementById('referralCode').textContent;
+            navigator.clipboard.writeText(code);
+            alert('✅ Referral code copied!');
+        }
+
+        // ========== SUBMIT REFERRAL ==========
+        async function submitReferral() {
+            const input = document.getElementById('friendCode');
+            const code = input.value.trim().toUpperCase();
+            
+            if (!code) {
+                alert('⚠️ Please enter a referral code.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/referral/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referralCode: code })
+                });
+
+                const data = await response.json();
+                const resultDiv = document.getElementById('referralResult');
+                
+                if (data.success) {
+                    resultDiv.className = 'referral-result success';
+                    resultDiv.innerHTML = `✅ ${data.message}`;
+                    document.getElementById('pointsDisplay').textContent = data.newPoints || '<%= user.points + 5 %>';
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    resultDiv.className = 'referral-result error';
+                    resultDiv.innerHTML = `❌ ${data.message}`;
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('referralResult');
+                resultDiv.className = 'referral-result error';
+                resultDiv.innerHTML = '❌ Something went wrong. Please try again.';
+            }
+        }
+
+        // Enter key support
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('friendCode');
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') submitReferral();
+                });
+            }
+        });
+
+        // ========== REDEEM FUNCTION ==========
+        async function redeem(points) {
+            const rewardNames = {
+                25: 'Free 30 Minutes',
+                50: 'Free 1 Hour',
+                100: 'Free 2 Hours'
+            };
+            
+            if (!confirm(`Redeem ${points} points for ${rewardNames[points]}?`)) return;
+
+            try {
+                const response = await fetch('/api/redeem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ points: points })
+                });
+
+                const data = await response.json();
+                const msgDiv = document.getElementById('redeemMessage');
+                
+                if (data.success) {
+                    msgDiv.className = 'redeem-message success';
+                    msgDiv.innerHTML = `✅ ${data.message}`;
+                    document.getElementById('pointsDisplay').textContent = data.newPoints;
+                    
+                    const progress = Math.min((data.newPoints / 50) * 100, 100);
+                    document.querySelector('.progress-fill').style.width = progress + '%';
+                    document.querySelector('.progress-text').textContent = 
+                        `${data.newPoints} / 50 pts to Free 1 Hour`;
+                    document.querySelector('.stat-value').textContent = data.freeHours;
+                    
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    msgDiv.className = 'redeem-message error';
+                    msgDiv.innerHTML = `❌ ${data.message}`;
+                }
+            } catch (error) {
+                const msgDiv = document.getElementById('redeemMessage');
+                msgDiv.className = 'redeem-message error';
+                msgDiv.innerHTML = '❌ Something went wrong.';
+            }
+        }
+
+        // Close menu on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMenu();
+                closeRefer();
+                closeProfilePage();
+            }
+        });
+    </script>
+</body>
+</html>
