@@ -1,203 +1,148 @@
 console.log("=== NEW SERVER.JS IS RUNNING ===");
 
 const express = require("express");
+const session = require("express-session");
+const path = require("path");
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static("public"));
 
-/*
-=====================================
-Mock User Database
-=====================================
-*/
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.use(session({
+    secret: "bikeappsecret",
+    resave: false,
+    saveUninitialized: true
+}));
+
+// =========================
+// Mock Database
+// =========================
 
 const users = [
-  {
-    id: 1,
-    email: "admin@bikeapp.com",
-    password: "admin123",
-    name: "Administrator",
-    role: "Admin"
-  },
-  {
-    id: 2,
-    email: "member@bikeapp.com",
-    password: "member123",
-    name: "Member User",
-    role: "Member"
-  }
+    {
+        id: 1,
+        email: "admin@bikeapp.com",
+        password: "admin123",
+        name: "Administrator",
+        role: "Admin"
+    },
+    {
+        id: 2,
+        email: "member@bikeapp.com",
+        password: "member123",
+        name: "Member User",
+        role: "Member"
+    }
 ];
+// =========================
+// Admin Middleware
+// =========================
 
-/*
-=====================================
-LOGIN API
-POST /api/auth/login
-=====================================
-*/
+function requireAdmin(req, res, next) {
+
+    if (!req.session.user) {
+        return res.redirect("/login.html");
+    }
+
+    if (req.session.user.role !== "Admin") {
+        return res.status(403).send("Access Denied");
+    }
+
+    next();
+
+}
+
+// =========================
+// Login
+// =========================
 
 app.post("/api/auth/login", (req, res) => {
 
-  console.log("===== LOGIN REQUEST =====");
-  console.log(req.body);
+    let { email, password } = req.body;
 
-  let { email, password } = req.body;
+    email = email.trim().toLowerCase();
+    password = password.trim();
 
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: "Email and password are required"
-    });
-  }
+    const user = users.find(u =>
+        u.email.toLowerCase() === email &&
+        u.password === password
+    );
 
-  email = email.trim().toLowerCase();
-  password = password.trim();
-
-  const user = users.find(u =>
-    u.email.toLowerCase() === email &&
-    u.password === password
-  );
-
-  console.log("Matched User:", user);
-
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid email or password"
-    });
-  }
-
-  return res.status(200).json({
-    success: true,
-    message: "Login successful",
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
+    if (!user) {
+        return res.status(401).json({
+            success: false,
+            message: "Invalid email or password"
+        });
     }
-  });
 
+    req.session.user = user;
+
+
+    res.json({
+        success: true,
+        message: "Login successful",
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    });
 });
 
-/*
-=====================================
-PROFILE API
-=====================================
-*/
 
-app.get("/api/auth/profile", (req, res) => {
+// =========================
+// Home Page
+// =========================
 
-  const user = users[0];
+app.get("/home", (req, res) => {
 
-  return res.status(200).json({
-    success: true,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
+    if (!req.session.user) {
+        return res.redirect("/login.html");
     }
-  });
 
-});
-
-/*
-=====================================
-ADMIN CHECK MIDDLEWARE
-=====================================
-*/
-
-function isAdmin(req, res, next) {
-
-  const { role } = req.body;
-
-  if (role !== "Admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Access Denied. Admin only."
+    res.render("home", {
+        user: req.session.user
     });
-  }
 
-  next();
+});
+// =========================
+// Admin Dashboard
+// =========================
 
-}
+app.get("/admin/dashboard", requireAdmin, (req, res) => {
 
-/*
-=====================================
-MEMBER CHECK MIDDLEWARE
-=====================================
-*/
-
-function isMember(req, res, next) {
-
-  const { role } = req.body;
-
-  if (role !== "Member") {
-    return res.status(403).json({
-      success: false,
-      message: "Members only."
+    res.render("admin-dashboard", {
+        user: req.session.user
     });
-  }
 
-  next();
+});
+// =========================
+// Logout
+// =========================
 
-}
+app.get("/logout", (req, res) => {
 
-/*
-=====================================
-ADMIN DASHBOARD
-=====================================
-*/
+    req.session.destroy(() => {
 
-app.get("/api/admin", isAdmin, (req, res) => {
+        res.redirect("/login.html");
 
-  res.json({
-    success: true,
-    message: "Welcome Admin"
-  });
+    });
 
 });
 
-/*
-=====================================
-MEMBER DASHBOARD
-=====================================
-*/
-
-app.get("/api/member", isMember, (req, res) => {
-
-  res.json({
-    success: true,
-    message: "Welcome Member"
-  });
-
-});
-
-/*
-=====================================
-LOGOUT
-=====================================
-*/
-
-app.post("/api/auth/logout", (req, res) => {
-
-  res.json({
-    success: true,
-    message: "Logged out successfully"
-  });
-
-});
-
-/*
-=====================================
-START SERVER
-=====================================
-*/
+// =========================
 
 const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+
+    console.log(`Server running on http://localhost:${PORT}`);
+
 });

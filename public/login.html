@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Bike App Login</title>
+  <title>City Scoot Login</title>
 
   <!-- Connect CSS -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
@@ -17,8 +17,8 @@
 
     <div class="left-section">
       <div class="branding">
-        <h1>🚲 BIKE APP</h1>
-        <p>Ride More, Worry Less</p>
+        <h1>🚲 City Scoot</h1>
+        <p>Ride More, Worry Less, Enjoy the Ride!</p>
       </div>
     </div>
 
@@ -32,21 +32,25 @@
         Login to continue your journey
       </p>
 
-      <input
+      <form onsubmit="login(event)">
+
+    <input
         type="text"
         id="email"
         placeholder="Email"
-      >
+    >
 
-      <input
+    <input
         type="password"
         id="password"
         placeholder="Password"
-      >
+    >
 
-      <button onclick="login()">
+    <button type="submit">
         🚲 Login
-      </button>
+    </button>
+
+</form>
 
       <p id="result"></p>
 
