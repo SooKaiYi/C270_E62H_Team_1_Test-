@@ -16,11 +16,18 @@ app.set('views', path.join(__dirname, 'views'));
 // ========== SIMPLE IN-MEMORY DATABASE ==========
 const user = {
     id: 1,
-    name: 'KaiYi',
+    name: 'Justin',
+    email: 'justin@example.com',
+    phone: '+65 9123 4567',
+    location: 'Singapore',
+    memberSince: 'January 2026',
     points: 142,
     freeHours: 1,
     rides: 12,
-    totalMinutes: 260
+    totalMinutes: 260,
+    referralCode: 'JUSTIN2026',
+    friendsReferred: 0,
+    referredBy: null
 };
 
 const transactions = [
@@ -30,7 +37,32 @@ const transactions = [
     { id: 4, points: 50, type: 'redeemed', desc: 'Redeemed Free Hour', date: '2026-07-05 18:00' },
 ];
 
-// ========== CORE REWARDS FUNCTIONS ==========
+// All users for referral validation
+const allUsers = [
+    {
+        id: 1,
+        name: 'Justin',
+        referralCode: 'JUSTIN2026',
+        friendsReferred: 0,
+        referredBy: null
+    },
+    {
+        id: 2,
+        name: 'WeiJin',
+        referralCode: 'WEIJIN2026',
+        friendsReferred: 0,
+        referredBy: null
+    },
+    {
+        id: 3,
+        name: 'Bernice',
+        referralCode: 'BERNICE2026',
+        friendsReferred: 0,
+        referredBy: null
+    }
+];
+
+// ========== POINTS CALCULATION ==========
 
 function calculatePoints(minutes) {
     const roundedMinutes = Math.floor(minutes);
@@ -99,7 +131,68 @@ function addRidePoints(minutes) {
     };
 }
 
-// ========== TRACKING INTEGRATION ==========
+// ========== REFERRAL FUNCTIONS ==========
+
+function processReferral(referredByCode) {
+    const referrer = allUsers.find(u => u.referralCode.toUpperCase() === referredByCode.toUpperCase());
+    
+    if (!referrer) {
+        return {
+            success: false,
+            message: 'Invalid referral code.'
+        };
+    }
+    
+    if (user.referredBy) {
+        return {
+            success: false,
+            message: 'You already used a referral code!'
+        };
+    }
+    
+    if (referrer.id === user.id) {
+        return {
+            success: false,
+            message: 'You cannot use your own code!'
+        };
+    }
+    
+    let pointsEarned = 5;
+    if (referrer.friendsReferred === 0) {
+        pointsEarned = 20;
+    }
+    
+    referrer.friendsReferred += 1;
+    user.points += pointsEarned;
+    user.referredBy = referredByCode;
+    
+    transactions.unshift({
+        id: transactions.length + 1,
+        points: pointsEarned,
+        type: 'earned',
+        desc: `🎉 Referral bonus: ${referrer.name} used your code! (+${pointsEarned} pts)`,
+        date: new Date().toLocaleString()
+    });
+    
+    transactions.unshift({
+        id: transactions.length + 1,
+        points: 5,
+        type: 'earned',
+        desc: `🎉 Welcome bonus: Used ${referrer.name}'s referral code! (+5 pts)`,
+        date: new Date().toLocaleString()
+    });
+    
+    user.points += 5;
+    
+    return {
+        success: true,
+        message: `You used ${referrer.name}'s code! You got 5 points, they got ${pointsEarned} points!`,
+        pointsEarned: pointsEarned,
+        referrerName: referrer.name
+    };
+}
+
+// ========== API ROUTES ==========
 
 app.post('/api/ride-complete', (req, res) => {
     const { minutes } = req.body;
@@ -107,21 +200,12 @@ app.post('/api/ride-complete', (req, res) => {
     if (!minutes || typeof minutes !== 'number' || minutes <= 0) {
         return res.status(400).json({
             success: false,
-            error: 'Invalid duration. Please provide minutes as a number.'
+            error: 'Invalid duration.'
         });
     }
     
     const result = addRidePoints(minutes);
-    
-    res.json({
-        success: result.success,
-        pointsEarned: result.points,
-        newBalance: result.newBalance || user.points,
-        roundedMinutes: result.roundedMinutes,
-        originalMinutes: result.originalMinutes,
-        message: result.message,
-        transaction: result.transaction
-    });
+    res.json(result);
 });
 
 app.get('/api/user/points', (req, res) => {
@@ -133,9 +217,22 @@ app.get('/api/user/points', (req, res) => {
     });
 });
 
-// ========== REWARDS PAGE AT ROOT (/) ==========
+app.post('/api/referral/submit', (req, res) => {
+    const { referralCode } = req.body;
+    
+    if (!referralCode) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please enter a referral code.'
+        });
+    }
+    
+    const result = processReferral(referralCode);
+    res.json(result);
+});
 
-// Home page - NOW SHOWS REWARDS DASHBOARD
+// ========== PAGE ROUTES ==========
+
 app.get('/', (req, res) => {
     const nextReward = 50;
     const progress = Math.min((user.points / nextReward) * 100, 100);
@@ -151,7 +248,6 @@ app.get('/', (req, res) => {
     });
 });
 
-// Manual calculation for testing
 app.post('/calculate', (req, res) => {
     const minutes = parseFloat(req.body.minutes);
     const result = calculatePoints(minutes);
@@ -170,7 +266,6 @@ app.post('/calculate', (req, res) => {
     });
 });
 
-// Redeem Reward
 app.post('/api/redeem', (req, res) => {
     const { points } = req.body;
     const rewardPoints = parseInt(points);
@@ -211,6 +306,7 @@ app.post('/api/redeem', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
-    console.log(`🔄 Tracking Integration: POST /api/ride-complete`);
+    console.log(`👥 Your Referral Code: ${user.referralCode}`);
     console.log(`📝 Points: 1 per 10 min | Rounded down | Min 15 for 1h+`);
+    console.log(`🎁 Referral: 1st friend 20pts, each after 5pts`);
 });
