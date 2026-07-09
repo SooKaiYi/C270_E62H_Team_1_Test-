@@ -1,0 +1,63 @@
+---
+# Ansible playbook: automates the setup of a server to run the ride-booking app.
+# Run with: ansible-playbook -i inventory.ini setup.yml
+# This demonstrates Infrastructure as Code (IaC) - repeatable, consistent server setup.
+
+- name: Provision server for Ride Booking App
+  hosts: app_servers
+  become: true
+
+  vars:
+    app_dir: /opt/ride-booking
+    repo_url: "https://github.com/<your-username>/ride-booking.git"
+
+  tasks:
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker Compose plugin
+      apt:
+        name: docker-compose
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Clone or update the application repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
+
+    - name: Build and start the app using Docker Compose
+      command: docker compose up -d --build
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Wait for the app to become healthy
+      uri:
+        url: "http://localhost:3000/health"
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 3
+      until: health_check.status == 200

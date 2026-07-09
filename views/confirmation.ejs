@@ -1,0 +1,20 @@
+<%- include('partials/header', { title: 'Booking Confirmed' }) %>
+
+<div class="confirmation">
+  <h1>✅ Booking Confirmed</h1>
+  <p>Thanks, <strong><%= booking.customerName %></strong>! Your ride is booked.</p>
+
+  <table class="summary-table">
+    <tr><th>Vehicle</th><td><%= booking.vehicleName %></td></tr>
+    <tr><th>Start Time</th><td><%= new Date(booking.startTime).toLocaleString() %></td></tr>
+    <tr><th>End Time</th><td><%= new Date(booking.endTime).toLocaleString() %></td></tr>
+    <tr><th>Billable Hours</th><td><%= booking.billableHours %></td></tr>
+    <tr><th>Total Price</th><td class="price-total">$<%= booking.totalPrice.toFixed(2) %></td></tr>
+    <tr><th>Booking ID</th><td><%= booking.id %></td></tr>
+  </table>
+
+  <a class="btn" href="/">Book Another Ride</a>
+  <a class="btn btn-secondary" href="/bookings">View All Bookings</a>
+</div>
+
+<%- include('partials/footer') %>

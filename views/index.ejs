@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: 'RideGo - Choose a Vehicle' }) %>
+
+<h1>Choose Your Ride</h1>
+<p class="subtitle">Pick a vehicle, set your start and end time, and we'll calculate your price instantly.</p>
+
+<div class="vehicle-grid">
+  <% vehicles.forEach(v => { %>
+    <div class="vehicle-card">
+    <div class="vehicle-icon">🚲</div>      <h2><%= v.name %></h2>
+      <p class="rate">$<%= v.ratePerHour.toFixed(2) %> / hour</p>
+      <p class="seats"><%= v.seats %> seats</p>
+      <a class="btn" href="/book/<%= v.id %>">Book Now</a>
+    </div>
+  <% }) %>
+</div>
+
+<%- include('partials/footer') %>

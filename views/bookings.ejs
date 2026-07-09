@@ -1,0 +1,40 @@
+<%- include('partials/header', { title: 'All Bookings' }) %>
+
+<h1>All Bookings</h1>
+
+<% if (bookings.length === 0) { %>
+  <p>No bookings yet. <a href="/">Book a ride</a>.</p>
+<% } else { %>
+  <table class="summary-table full">
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Vehicle</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Hours</th>
+        <th>Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% bookings.forEach(b => { %>
+        <tr>
+          <td><%= b.customerName %></td>
+          <td><%= b.vehicleName %></td>
+          <td><%= new Date(b.startTime).toLocaleString() %></td>
+          <td><%= new Date(b.endTime).toLocaleString() %></td>
+          <td><%= b.billableHours %></td>
+          <td>$<%= b.totalPrice.toFixed(2) %></td>
+          <td>
+            <form method="POST" action="/bookings/<%= b.id %>/cancel">
+              <button type="submit" class="btn btn-small btn-danger">Cancel</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/footer') %>
