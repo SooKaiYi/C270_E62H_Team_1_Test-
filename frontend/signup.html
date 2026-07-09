@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>City Scoot Sign Up</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+
+</head>
+
+<body>
+
+<div class="main-container">
+
+    <div class="left-section">
+
+        <div class="branding">
+
+            <h1>🚲 City Scoot</h1>
+
+            <p>Create your account and start riding today!</p>
+
+        </div>
+
+    </div>
+
+    <div class="login-card">
+
+        <div class="icon-circle">🚴</div>
+
+        <h2>Create Account</h2>
+
+        <p class="subtitle">
+
+            Join City Scoot today
+
+        </p>
+
+        <form onsubmit="signup(event)">
+
+            <input
+                type="text"
+                id="name"
+                placeholder="Full Name"
+                required
+            >
+
+            <input
+                type="email"
+                id="email"
+                placeholder="Email Address"
+                required
+            >
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Password"
+                required
+            >
+
+            <input
+                type="password"
+                id="confirmPassword"
+                placeholder="Confirm Password"
+                required
+            >
+
+            <button type="submit">
+
+                🚲 Create Account
+
+            </button>
+
+        </form>
+
+        <p id="result"></p>
+
+        <div class="divider">or</div>
+
+        <p class="signup-text">
+
+            Already have an account?
+
+            <a href="/login.html">Login</a>
+
+        </p>
+
+    </div>
+
+</div>
+
+<div class="bottom-bar">
+
+    <div class="feature-box">
+
+        <h3>🚴 Track Rides</h3>
+
+        <p>Monitor your cycling activities</p>
+
+    </div>
+
+    <div class="feature-box">
+
+        <h3>🗺 Explore Routes</h3>
+
+        <p>Discover scenic cycling routes</p>
+
+    </div>
+
+    <div class="feature-box">
+
+        <h3>👥 Community</h3>
+
+        <p>Meet fellow cyclists</p>
+
+    </div>
+
+    <div class="feature-box">
+
+        <h3>🛡 Stay Safe</h3>
+
+        <p>Ride with confidence every day</p>
+
+    </div>
+
+</div>
+
+<script src="signup.js"></script>
+
+</body>
+
+</html>
