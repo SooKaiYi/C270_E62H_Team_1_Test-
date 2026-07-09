@@ -1,0 +1,8 @@
+{
+  "name": "cycling-rewards-frontend",
+  "version": "1.0.0",
+  "description": "Static frontend for the Rewards app (talks to the backend API)",
+  "scripts": {
+    "start": "npx serve -l 5173 ."
+  }
+}

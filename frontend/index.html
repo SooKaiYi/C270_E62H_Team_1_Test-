@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rewards - CycleApp</title>
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+    <!-- ========== SLIDE MENU (PROFILE SIDEBAR) ========== -->
+    <div id="menuOverlay" class="menu-overlay" onclick="closeMenu()"></div>
+
+    <div id="slideMenu" class="slide-menu">
+        <div class="profile-header">
+            <div class="profile-avatar"><span class="avatar-emoji">😎</span></div>
+            <h3 class="profile-name" onclick="openProfilePage()" style="cursor: pointer;">
+                <span id="menuUserName"></span> 👆
+            </h3>
+            <p class="profile-points">⭐ <span id="menuUserPoints"></span> points</p>
+            <button class="menu-close" onclick="closeMenu()">✕</button>
+        </div>
+
+        <div class="menu-divider"></div>
+        <ul class="menu-items">
+            <li onclick="openRefer()">
+                <span class="menu-icon">👥</span>
+                Refer a Friend
+            </li>
+        </ul>
+    </div>
+
+    <!-- ========== PROFILE PAGE (FULL PAGE) ========== -->
+    <div id="profilePage" class="profile-page" style="display: none;">
+        <div class="profile-page-header">
+            <button class="back-btn" onclick="closeProfilePage()">← Back</button>
+            <h2>My Profile</h2>
+            <div style="width: 60px;"></div>
+        </div>
+
+        <div class="profile-page-content">
+            <div class="profile-page-avatar-section">
+                <div class="profile-page-avatar"><span>😎</span></div>
+                <h2 id="profileName"></h2>
+                <p class="profile-page-points">⭐ <span id="profilePoints"></span> points</p>
+            </div>
+
+            <div class="profile-page-details">
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📧</span>
+                    <div><span class="profile-page-label">Email</span><span class="profile-page-value" id="profileEmail"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📱</span>
+                    <div><span class="profile-page-label">Phone</span><span class="profile-page-value" id="profilePhone"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">📍</span>
+                    <div><span class="profile-page-label">Location</span><span class="profile-page-value" id="profileLocation"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🎂</span>
+                    <div><span class="profile-page-label">Member Since</span><span class="profile-page-value" id="profileMemberSince"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🏆</span>
+                    <div><span class="profile-page-label">Total Rides</span><span class="profile-page-value" id="profileRides"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">⏱️</span>
+                    <div><span class="profile-page-label">Total Time</span><span class="profile-page-value" id="profileTotalTime"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🆓</span>
+                    <div><span class="profile-page-label">Free Hours</span><span class="profile-page-value" id="profileFreeHours"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">👥</span>
+                    <div><span class="profile-page-label">Referral Code</span><span class="profile-page-value code-value" id="profileReferralCode"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">👥</span>
+                    <div><span class="profile-page-label">Friends Referred</span><span class="profile-page-value" id="profileFriendsReferred"></span></div>
+                </div>
+                <div class="profile-page-item">
+                    <span class="profile-page-icon">🔑</span>
+                    <div><span class="profile-page-label">Referred By</span><span class="profile-page-value" id="profileReferredBy"></span></div>
+                </div>
+            </div>
+
+            <div class="profile-page-actions">
+                <button onclick="copyCode()" class="profile-action-btn">📋 Copy Referral Code</button>
+                <button onclick="closeProfilePage(); openRefer();" class="profile-action-btn secondary">👥 Refer a Friend</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <div id="mainContent" class="container">
+
+        <header>
+            <div class="header-row">
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                <h1>⭐ Rewards</h1>
+                <div style="width: 40px;"></div>
+            </div>
+            <p>Welcome back, <strong id="welcomeName"></strong>!</p>
+            <p class="subtitle">Ride more, earn more points automatically</p>
+        </header>
+
+        <div class="balance-card">
+            <div class="balance">
+                <span class="label">Your Points</span>
+                <span class="amount" id="pointsDisplay">0</span>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+                <span class="progress-text" id="progressText"></span>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-value" id="statFreeHours">0</span>
+                    <span class="stat-label">Free Hours</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="statRides">0</span>
+                    <span class="stat-label">Rides</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="statTotalTime">0h 0m</span>
+                    <span class="stat-label">Total Time</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== REFERRAL SECTION (HIDDEN BY DEFAULT) ========== -->
+        <div id="referSection" class="refer-section" style="display: none;">
+            <div class="refer-header">
+                <h2>👥 Refer a Friend</h2>
+                <button class="close-refer" onclick="closeRefer()">✕</button>
+            </div>
+
+            <div class="referral-box">
+                <div class="referral-code-display">
+                    <span>Your Code: <strong id="referralCode"></strong></span>
+                    <button onclick="copyCode()" class="btn-small">📋 Copy</button>
+                </div>
+                <p class="referral-info">
+                    🎁 First friend: <strong>20 points</strong><br>
+                    🎁 Each friend after: <strong>5 points</strong>
+                </p>
+            </div>
+
+            <div class="referral-box">
+                <p>Enter a friend's referral code to get <strong>5 bonus points</strong>:</p>
+                <div id="referredByNotice" style="display:none;">
+                    <p style="color: #48bb78; font-weight: bold;">
+                        ✅ You already used a referral code from: <strong id="referredByName"></strong>
+                    </p>
+                </div>
+                <div id="referralInputWrap">
+                    <div class="referral-input-group">
+                        <input type="text" id="friendCode" placeholder="Enter code..." />
+                        <button onclick="submitReferral()">Redeem</button>
+                    </div>
+                    <div id="referralResult"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIDE SIMULATOR -->
+        <div class="calculator">
+            <h2>🧪 Test Ride Points</h2>
+            <p class="note">(This simulates what happens when tracking ends)</p>
+            <div class="input-group">
+                <input
+                    type="number"
+                    id="minutesInput"
+                    placeholder="Enter ride minutes..."
+                    step="0.1"
+                    min="1"
+                    max="300"
+                    required
+                />
+                <button onclick="calculateRide()">Calculate</button>
+            </div>
+
+            <div id="calculationResultBox"></div>
+        </div>
+
+        <!-- REWARDS REDEMPTION -->
+        <div class="rewards-section">
+            <h2>🎁 Redeem Rewards</h2>
+            <div class="reward-grid">
+                <div class="reward-card">
+                    <span class="icon">⏰</span>
+                    <h3>Free 30 Min</h3>
+                    <p>25 points</p>
+                    <button onclick="redeem(25)">Redeem</button>
+                </div>
+                <div class="reward-card highlight">
+                    <span class="icon">🕐</span>
+                    <h3>Free 1 Hour</h3>
+                    <p>50 points</p>
+                    <button onclick="redeem(50)">Redeem</button>
+                </div>
+                <div class="reward-card">
+                    <span class="icon">🕑</span>
+                    <h3>Free 2 Hours</h3>
+                    <p>100 points</p>
+                    <button onclick="redeem(100)">Redeem</button>
+                </div>
+            </div>
+            <div id="redeemMessage" class="redeem-message"></div>
+        </div>
+
+        <!-- TRANSACTION HISTORY -->
+        <div class="history">
+            <h2>📜 Recent Activity</h2>
+            <div class="transaction-list" id="transactionList"></div>
+        </div>
+
+        <!-- INTEGRATION INFO -->
+        <div class="integration-info">
+            <h3>🔌 Tracking Integration</h3>
+            <p>When your tracking page ends a ride, send a POST request to:</p>
+            <code>POST /api/ride-complete</code>
+            <p>With body:</p>
+            <code>{ "minutes": 25.8 }</code>
+            <p class="note">The system will automatically round down and add points!</p>
+        </div>
+
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
