@@ -1,39 +1,14 @@
-console.log("=== NEW SERVER.JS IS RUNNING ===");
-
 const express = require("express");
-const session = require("express-session");
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 
-const app = express();
+const router = express.Router();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// =========================
-// Static Files
-// =========================
-
-app.use(express.static(path.join(__dirname, "../frontend")));
-
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../frontend/views"));
-
-// =========================
-// Session
-// =========================
-
-app.use(session({
-    secret: "bikeappsecret",
-    resave: false,
-    saveUninitialized: true
-}));
-
-// =========================
+// =======================================
 // User Database
-// =========================
+// =======================================
 
-const userFile = path.join(__dirname, "user.json");
+const userFile = path.join(__dirname, "../data/user.json");
 
 function loadUsers() {
     return JSON.parse(fs.readFileSync(userFile, "utf8"));
@@ -43,9 +18,9 @@ function saveUsers(users) {
     fs.writeFileSync(userFile, JSON.stringify(users, null, 2));
 }
 
-// =========================
+// =======================================
 // Admin Middleware
-// =========================
+// =======================================
 
 function requireAdmin(req, res, next) {
 
@@ -61,11 +36,11 @@ function requireAdmin(req, res, next) {
 
 }
 
-// =========================
+// =======================================
 // Login
-// =========================
+// =======================================
 
-app.post("/api/auth/login", (req, res) => {
+router.post("/api/auth/login", (req, res) => {
 
     let { email, password } = req.body;
 
@@ -74,9 +49,10 @@ app.post("/api/auth/login", (req, res) => {
 
     const users = loadUsers();
 
-    const user = users.find(u =>
-        u.email.toLowerCase() === email &&
-        u.password === password
+    const user = users.find(
+        u =>
+            u.email.toLowerCase() === email &&
+            u.password === password
     );
 
     if (!user) {
@@ -103,11 +79,11 @@ app.post("/api/auth/login", (req, res) => {
 
 });
 
-// =========================
-// Sign Up
-// =========================
+// =======================================
+// Signup
+// =======================================
 
-app.post("/api/auth/signup", (req, res) => {
+router.post("/api/auth/signup", (req, res) => {
 
     const { name, email, password } = req.body;
 
@@ -145,13 +121,17 @@ app.post("/api/auth/signup", (req, res) => {
 
 });
 
-// =========================
-// Home Page
-// =========================
+// =======================================
+// Home
+// =======================================
 
-app.get("/home", (req, res) => {
+router.get("/home", (req, res) => {
+
+    console.log("========== HOME ==========");
+    console.log("Session:", req.session);
 
     if (!req.session.user) {
+        console.log("No user found in session");
         return res.redirect("/login.html");
     }
 
@@ -161,11 +141,11 @@ app.get("/home", (req, res) => {
 
 });
 
-// =========================
+// =======================================
 // Admin Dashboard
-// =========================
+// =======================================
 
-app.get("/admin/dashboard", requireAdmin, (req, res) => {
+router.get("/admin/dashboard", requireAdmin, (req, res) => {
 
     res.render("admin-dashboard", {
         user: req.session.user
@@ -173,20 +153,11 @@ app.get("/admin/dashboard", requireAdmin, (req, res) => {
 
 });
 
-// =========================
-// Logout
-// =========================
+// =======================================
+// Manage Users
+// =======================================
 
-app.get("/logout", (req, res) => {
-
-    req.session.destroy(() => {
-
-        res.redirect("/login.html");
-
-    });
-
-});
-app.get("/admin/users", requireAdmin, (req, res) => {
+router.get("/admin/users", requireAdmin, (req, res) => {
 
     const users = loadUsers();
 
@@ -196,7 +167,12 @@ app.get("/admin/users", requireAdmin, (req, res) => {
     });
 
 });
-app.get("/admin/users/:id", requireAdmin, (req, res) => {
+
+// =======================================
+// Edit User Page
+// =======================================
+
+router.get("/admin/users/:id", requireAdmin, (req, res) => {
 
     const users = loadUsers();
 
@@ -205,9 +181,7 @@ app.get("/admin/users/:id", requireAdmin, (req, res) => {
     );
 
     if (!user) {
-
         return res.send("User not found");
-
     }
 
     res.render("edit-user", {
@@ -215,7 +189,12 @@ app.get("/admin/users/:id", requireAdmin, (req, res) => {
     });
 
 });
-app.post("/admin/users/:id", requireAdmin, (req, res) => {
+
+// =======================================
+// Save Edited User
+// =======================================
+
+router.post("/admin/users/:id", requireAdmin, (req, res) => {
 
     const users = loadUsers();
 
@@ -224,9 +203,7 @@ app.post("/admin/users/:id", requireAdmin, (req, res) => {
     );
 
     if (!user) {
-
         return res.send("User not found");
-
     }
 
     user.name = req.body.name;
@@ -239,13 +216,46 @@ app.post("/admin/users/:id", requireAdmin, (req, res) => {
     res.redirect("/admin/users");
 
 });
+// =======================================
+// Delete User
+// =======================================
 
-// =========================
+router.post("/admin/users/:id/delete", requireAdmin, (req, res) => {
 
-const PORT = 3000;
+    console.log("===== DELETE USER =====");
+    console.log("Deleting ID:", req.params.id);
 
-app.listen(PORT, () => {
+    const users = loadUsers();
 
-    console.log(`Server running on http://localhost:${PORT}`);
+    const userId = parseInt(req.params.id);
+
+    if (req.session.user.id === userId) {
+        return res.send("You cannot delete your own account.");
+    }
+
+    const updatedUsers = users.filter(user => user.id !== userId);
+
+    saveUsers(updatedUsers);
+
+    console.log("User deleted successfully.");
+
+    res.redirect("/admin/users");
 
 });
+
+
+// =======================================
+// Logout
+// =======================================
+
+router.get("/logout", (req, res) => {
+
+    req.session.destroy(() => {
+
+        res.redirect("/login.html");
+
+    });
+
+});
+
+module.exports = router;
