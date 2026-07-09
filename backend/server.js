@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 // =======================================
 // Static Files
 // =======================================
-
+app.use(express.static(path.join(__dirname, "../frontend")));
 app.use(express.static(path.join(__dirname, "../frontend/pages")));
 app.use("/src", express.static(path.join(__dirname, "../frontend/src")));
 app.use("/styles", express.static(path.join(__dirname, "../frontend/styles")));
@@ -45,9 +45,10 @@ app.set("views", path.join(__dirname, "../frontend/views"));
 // =======================================
 
 const routes = require("./routes/routes");
+const mapRoutes = require("./routes/mapRoutes");
 
 app.use("/", routes);
-
+app.use("/", mapRoutes);
 // =======================================
 // 404 Page
 // =======================================

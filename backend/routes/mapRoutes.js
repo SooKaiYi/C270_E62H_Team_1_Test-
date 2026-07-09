@@ -3,6 +3,6 @@ const router = express.Router();
 
 const mapController = require("../controllers/mapController");
 
-router.get("/", mapController.showMap);
+router.get("/map", mapController.showMap);
 
 module.exports = router;
