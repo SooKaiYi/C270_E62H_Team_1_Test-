@@ -19,5 +19,12 @@
     "email": "jason@bikeapp.com",
     "password": "jason",
     "role": "Member"
+  },
+  {
+    "id": 6,
+    "name": "jack",
+    "email": "jack@bikeapp.com",
+    "password": "jack",
+    "role": "Member"
   }
 ]
