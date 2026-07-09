@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "email": "admin@bikeapp.com",
+    "password": "admin123",
+    "name": "Administrator",
+    "role": "Admin"
+  },
+  {
+    "id": 2,
+    "email": "member@bikeapp.com",
+    "password": "member123",
+    "name": "Member User",
+    "role": "Member"
+  },
+  {
+    "id": 3,
+    "name": "jason",
+    "email": "jason@bikeapp.com",
+    "password": "jason",
+    "role": "Member"
+  }
+]
