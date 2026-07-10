@@ -9,22 +9,30 @@ const app = express();
 // =======================================
 // Body Parser
 // =======================================
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =======================================
+// Absolute Paths Config
+// =======================================
+// This finds the exact folder where server.js lives, then goes out one level to the root
+const rootDir = path.resolve(__dirname, '..');
+const frontendPath = path.join(rootDir, 'frontend');
+const pagesPath = path.join(frontendPath, 'pages');
+
+console.log("Root Directory:", rootDir);
+console.log("Frontend Path:", frontendPath);
+console.log("Pages Path:", pagesPath);
+
+// =======================================
 // Static Files
 // =======================================
-app.use(express.static(path.join(__dirname, "../frontend")));
-app.use(express.static(path.join(__dirname, "../frontend/pages")));
-app.use("/src", express.static(path.join(__dirname, "../frontend/src")));
-app.use("/styles", express.static(path.join(__dirname, "../frontend/styles")));
+app.use(express.static(frontendPath));
+app.use(express.static(pagesPath));
 
 // =======================================
 // Session
 // =======================================
-
 app.use(
     session({
         secret: "bikeappsecret",
@@ -36,23 +44,21 @@ app.use(
 // =======================================
 // View Engine
 // =======================================
-
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../frontend/views"));
+app.set("views", pagesPath);
 
 // =======================================
 // Routes
 // =======================================
-
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
 
 app.use("/", routes);
 app.use("/", mapRoutes);
+
 // =======================================
 // 404 Page
 // =======================================
-
 app.use((req, res) => {
     res.status(404).send("404 - Page Not Found");
 });
@@ -60,7 +66,6 @@ app.use((req, res) => {
 // =======================================
 // Start Server
 // =======================================
-
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

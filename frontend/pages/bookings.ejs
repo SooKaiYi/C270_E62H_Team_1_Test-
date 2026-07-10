@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All Bookings - Ride Booking</title>
+  <link rel="stylesheet" href="/styles/ride-booking.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">🚲 RideBooking</div>
+    <div class="navbar-links">
+      <a href="/">Book a Bike</a>
+      <a href="/bookings">All Bookings</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1>All Bookings</h1>
+
+    <% if (bookings.length === 0) { %>
+      <p class="subtitle">No bookings yet. <a href="/">Make the first one.</a></p>
+    <% } else { %>
+      <table class="bookings-table">
+        <thead>
+          <tr>
+            <th>Renter</th>
+            <th>Station</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Duration (hrs)</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(b => { %>
+            <tr>
+              <td><%= b.renterName %></td>
+              <td><%= b.station %></td>
+              <td><%= new Date(b.startTime).toLocaleString() %></td>
+              <td><%= new Date(b.endTime).toLocaleString() %></td>
+              <td><%= b.durationHours %></td>
+              <td>$<%= b.totalCost %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </main>
+</body>
+</html>

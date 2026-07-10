@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1783671781559,
+    "renterName": "Lennon",
+    "station": "Station A - Woodlands",
+    "startTime": "2026-07-10T09:00",
+    "endTime": "2026-07-10T11:20",
+    "durationHours": "2.50",
+    "ratePerHour": "1.00",
+    "totalCost": "2.50"
+  },
+  {
+    "id": 1783672090068,
+    "renterName": "Lennon",
+    "station": "Station A - Woodlands",
+    "startTime": "2026-07-10T09:00",
+    "endTime": "2026-07-10T11:20",
+    "durationHours": "2.50",
+    "ratePerHour": "1.00",
+    "totalCost": "2.50"
+  },
+  {
+    "id": 1783673480623,
+    "renterName": "Test",
+    "station": "Station B - Yishun",
+    "startTime": "2026-07-10T09:00",
+    "endTime": "2026-07-10T10:00",
+    "durationHours": "1.00",
+    "ratePerHour": "1.00",
+    "totalCost": "1.00"
+  },
+  {
+    "id": 1783673914786,
+    "renterName": "Test2",
+    "station": "Station C - Punggol",
+    "startTime": "2026-07-10T08:00",
+    "endTime": "2026-07-10T09:30",
+    "durationHours": "1.50",
+    "ratePerHour": "1.00",
+    "totalCost": "1.50"
+  },
+  {
+    "id": 1783674135808,
+    "renterName": "Test3",
+    "station": "Station D - Tampines",
+    "startTime": "2026-07-10T10:00",
+    "endTime": "2026-07-10T12:00",
+    "durationHours": "2.00",
+    "ratePerHour": "1.00",
+    "totalCost": "2.00"
+  }
+]

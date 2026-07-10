@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Booking Confirmed - Ride Booking</title>
+  <link rel="stylesheet" href="/styles/ride-booking.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">🚲 RideBooking</div>
+    <div class="navbar-links">
+      <a href="/">Book a Bike</a>
+      <a href="/bookings">All Bookings</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1>Booking Confirmed ✅</h1>
+
+    <div class="receipt">
+      <div class="receipt-row"><span>Renter</span><span><%= booking.renterName %></span></div>
+      <div class="receipt-row"><span>Station</span><span><%= booking.station %></span></div>
+      <div class="receipt-row"><span>Start</span><span><%= new Date(booking.startTime).toLocaleString() %></span></div>
+      <div class="receipt-row"><span>End</span><span><%= new Date(booking.endTime).toLocaleString() %></span></div>
+      <div class="receipt-row"><span>Duration</span><span><%= booking.durationHours %> hrs</span></div>
+      <div class="receipt-row"><span>Rate</span><span>$<%= booking.ratePerHour %>/hr</span></div>
+      <div class="receipt-row total"><span>Total Cost</span><span>$<%= booking.totalCost %></span></div>
+    </div>
+
+    <a class="btn-link" href="/">Book Another Bike</a>
+  </main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bike Rental - Ride Booking</title>
+  <link rel="stylesheet" href="/styles/ride-booking.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">🚲 RideBooking</div>
+    <div class="navbar-links">
+      <a href="/">Book a Bike</a>
+      <a href="/bookings">All Bookings</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1>Bicycle Rental Price Calculator</h1>
+    <p class="subtitle">Rate: $<%= 1 %>.00 per hour (billed in 15-minute increments)</p>
+
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+
+    <form action="/calculate" method="POST" class="booking-form">
+      <label for="renterName">Your Name</label>
+      <input type="text" id="renterName" name="renterName" placeholder="e.g. Lennon">
+
+      <label for="stationId">Pickup Station</label>
+      <select id="stationId" name="stationId" required>
+        <% stations.forEach(station => { %>
+          <option value="<%= station.id %>"><%= station.name %></option>
+        <% }) %>
+      </select>
+
+      <label for="startTime">Start Time</label>
+      <input type="datetime-local" id="startTime" name="startTime" required>
+
+      <label for="endTime">End Time</label>
+      <input type="datetime-local" id="endTime" name="endTime" required>
+
+      <button type="submit">Calculate & Book</button>
+    </form>
+  </main>
+
+  <script src="/src/ride-booking.js"></script>
+</body>
+</html>
