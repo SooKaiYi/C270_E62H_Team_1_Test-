@@ -46,9 +46,11 @@ app.set("views", path.join(__dirname, "../frontend/views"));
 
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
+const rewardsRoutes = require("./routes/rewardsRoutes");
 
 app.use("/", routes);
 app.use("/", mapRoutes);
+app.use("/", rewardsRoutes);
 // =======================================
 // 404 Page
 // =======================================
