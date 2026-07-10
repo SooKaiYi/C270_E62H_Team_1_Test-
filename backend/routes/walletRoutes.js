@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const walletController = require('../controllers/walletController');
 
+function requireLogin(req, res, next) {
+    if (!req.session || !req.session.user) {
+        return res.redirect('/login.html');
+    }
+
+    next();
+}
+
+router.use(requireLogin);
+
 router.get('/', walletController.showDashboard);
 router.get('/topup', walletController.showTopUp);
 router.post('/topup', walletController.topUp);

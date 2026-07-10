@@ -1,12 +1,7 @@
 const walletModel = require('../models/walletModel');
 
 function getCurrentUserId(req) {
-    if (req.session && req.session.user && req.session.user.id) {
-        return req.session.user.id;
-    }
-
-    // Temporary fallback for testing only
-    return 1;
+    return req.session.user.id;
 }
 
 function formatCurrency(amount) {
