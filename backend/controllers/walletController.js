@@ -1,4 +1,5 @@
 const walletModel = require('../models/walletModel');
+const adminWalletModel = require('../models/adminWalletModel');
 
 function getCurrentUserId(req) {
     return req.session.user.id;
@@ -132,11 +133,32 @@ async function showHistory(req, res, next) {
     }
 }
 
+async function showAdminDashboard(req, res, next) {
+    try {
+        const dashboard =
+            await adminWalletModel.getAdminWalletDashboard();
+
+        res.render('wallet/admin', {
+            title: 'Admin Wallet Management',
+            user: req.session.user,
+            wallets: dashboard.wallets,
+            transactions: dashboard.transactions,
+            statistics: dashboard.statistics,
+            formatCurrency,
+            formatDateTime,
+            transactionSign
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     showDashboard,
     showTopUp,
     topUp,
     showPasses,
     purchasePass,
-    showHistory
+    showHistory,
+    showAdminDashboard
 };

@@ -133,5 +133,32 @@
         "balanceAfter": 79,
         "status": "Success",
         "timestamp": "2026-07-10T08:37:33.096Z"
+    },
+    {
+        "transactionId": 16,
+        "userId": 2,
+        "type": "Single Trip",
+        "amount": 2,
+        "balanceAfter": 3,
+        "status": "Success",
+        "timestamp": "2026-07-10T12:29:30.569Z"
+    },
+    {
+        "transactionId": 17,
+        "userId": 2,
+        "type": "Single Trip",
+        "amount": 2,
+        "balanceAfter": 1,
+        "status": "Success",
+        "timestamp": "2026-07-10T13:11:36.766Z"
+    },
+    {
+        "transactionId": 18,
+        "userId": 2,
+        "type": "Top Up",
+        "amount": 10,
+        "balanceAfter": 11,
+        "status": "Success",
+        "timestamp": "2026-07-10T13:11:41.951Z"
     }
 ]

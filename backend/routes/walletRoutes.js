@@ -10,7 +10,29 @@ function requireLogin(req, res, next) {
     next();
 }
 
+function requireAdmin(req, res, next) {
+    if (
+        !req.session ||
+        !req.session.user ||
+        String(req.session.user.role).toLowerCase() !== 'admin'
+    ) {
+        return res
+            .status(403)
+            .send('403 - Admin access required');
+    }
+
+    next();
+}
+
 router.use(requireLogin);
+
+router.get('/', walletController.showDashboard);
+
+router.get(
+    '/admin',
+    requireAdmin,
+    walletController.showAdminDashboard
+);
 
 router.get('/', walletController.showDashboard);
 router.get('/topup', walletController.showTopUp);
