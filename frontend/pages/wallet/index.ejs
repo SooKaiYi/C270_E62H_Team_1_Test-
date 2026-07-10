@@ -1,0 +1,113 @@
+<%- include('../partials/header') %>
+<link rel="stylesheet" href="/styles/wallet.css">
+
+<div class="wallet-shell">
+    <section class="wallet-hero">
+        <div>
+            <div class="hero-eyebrow">Ride More, Worry Less</div>
+            <h1 class="hero-title">My Bike Wallet</h1>
+            <p class="hero-copy mb-4">Check your available credits, top up instantly, buy ride passes, and track every spending in one place.</p>
+            <a href="/wallet/topup" class="btn btn-bike">🚴 Top Up Credits</a>
+        </div>
+
+        <div class="balance-card">
+            <div class="balance-icon">💳</div>
+            <p class="balance-label mb-2">Available Credits</p>
+            <div class="balance-amount"><%= formatCurrency(wallet.balance) %></div>
+            <p class="text-muted mb-0 mt-3">Ready for your next ride around Singapore.</p>
+        </div>
+    </section>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <span>Total Transactions</span>
+            <strong><%= transactions.length %></strong>
+        </div>
+        <div class="stat-card">
+            <span>Wallet Status</span>
+            <strong>Active</strong>
+        </div>
+        <div class="stat-card">
+            <span>Payment Type</span>
+            <strong>Credits</strong>
+        </div>
+    </section>
+
+    <section class="content-panel">
+        <% if (user && user.role === "admin") { %>
+            <h2 class="h4 panel-title">🔐 Admin Wallet Controls</h2>
+            <p class="text-muted">
+                Admin view: You can review wallet activity and monitor transactions.
+            </p>
+            <a href="/wallet/history" class="btn btn-outline-primary btn-sm">
+                View Wallet Transactions
+            </a>   
+        <% } else { %>
+            <h2 class="h4 panel-title">👤 Member Wallet</h2>
+            <p class="text-muted mb-0">
+                Member view: You can top up credits, buy ride passes, and view your own transaction history.
+            </p>
+        <% } %>
+    </section>
+
+    <section class="action-grid">
+        <a class="action-card" href="/wallet/topup">
+            <div class="action-icon">➕</div>
+            <span class="fw-bold fs-5">Top Up</span>
+            <small>Add credits before renting a bicycle.</small>
+        </a>
+        <a class="action-card" href="/wallet/pass">
+            <div class="action-icon">🎫</div>
+            <span class="fw-bold fs-5">Buy Single Trip</span>
+            <small>Use wallet credits for one ride.</small>
+        </a>
+        <a class="action-card" href="/wallet/pass">
+            <div class="action-icon">☀️</div>
+            <span class="fw-bold fs-5">Buy Day Pass</span>
+            <small>Ride for the day with one pass.</small>
+        </a>
+    </section>
+
+    <section class="content-panel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0 panel-title">📋 Recent Transactions</h2>
+            <a href="/wallet/history" class="btn btn-outline-primary btn-sm">View All</a>
+        </div>
+
+        <% if (transactions.length === 0) { %>
+            <p class="text-muted mb-0">No transactions yet. Top up your wallet to get started.</p>
+        <% } else { %>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Balance After</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% transactions.forEach((transaction) => { %>
+                            <tr>
+                                <td class="fw-semibold"><%= transaction.type %></td>
+                                <td><%= transactionSign(transaction.type) %><%= formatCurrency(transaction.amount) %></td>
+                                <td><%= formatCurrency(transaction.balanceAfter) %></td>
+                                <td>
+                                    <span class="badge <%= transaction.status === 'Success' ? 'text-bg-success' : 'text-bg-danger' %>">
+                                        <%= transaction.status %>
+                                    </span>
+                                </td>
+                                <td><%= formatDateTime(transaction.timestamp) %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </section>
+</div>
+
+<script src="/src/wallet.js"></script>
+<%- include('../partials/footer') %>
