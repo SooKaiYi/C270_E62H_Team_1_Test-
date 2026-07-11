@@ -26,5 +26,12 @@
     "email": "jack@bikeapp.com",
     "password": "jack",
     "role": "Member"
+  },
+  {
+    "id": 5,
+    "name": "ky",
+    "email": "ky@bikeapp.com",
+    "password": "ky",
+    "role": "Member"
   }
 ]
