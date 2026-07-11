@@ -73,6 +73,21 @@ body {
   display: block;
 }
 
+.home-btn {
+  display: inline-block;
+  margin-bottom: 15px;
+  padding: 10px 16px;
+  background-color: #4CAF50;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.home-btn:hover {
+  background-color: #45a049;
+}
+
 #map {
   height: 500px;
   width: 100%;
