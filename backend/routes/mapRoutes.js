@@ -1,8 +1,8 @@
-const express = require("express");
-const router = express.Router();
+    const express = require("express");
+    const router = express.Router();
 
-const mapController = require("../controllers/mapController");
+    const mapController = require("../controllers/mapController");
 
-router.get("/map", mapController.showMap);
+    router.get("/map", mapController.showMap);
 
-module.exports = router;
+    module.exports = router;
