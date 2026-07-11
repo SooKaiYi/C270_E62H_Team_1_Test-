@@ -38,7 +38,10 @@ app.use(
 // =======================================
 
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "../frontend/views"));
+app.set("views", [
+    path.join(__dirname, "../frontend/views"),
+    path.join(__dirname, "../frontend/pages")
+]);
 
 // =======================================
 // Routes
@@ -46,9 +49,11 @@ app.set("views", path.join(__dirname, "../frontend/views"));
 
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
+const walletRoutes = require("./routes/walletRoutes");
 
 app.use("/", routes);
 app.use("/", mapRoutes);
+app.use("/wallet", walletRoutes);
 // =======================================
 // 404 Page
 // =======================================

@@ -2,8 +2,13 @@ const express = require("express");
 const path = require("path");
 
 const mapRoutes = require("./routes/mapRoutes");
+const walletRoutes = require('./routes/walletRoutes');
 
 const app = express();
+
+// Read form and JSON data
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.set("view engine", "ejs");
 app.set(
@@ -20,6 +25,7 @@ app.use(
 
 
 app.use("/", mapRoutes);
+app.use('/wallet', walletRoutes);
 
 const PORT = process.env.PORT || 3000;
 
