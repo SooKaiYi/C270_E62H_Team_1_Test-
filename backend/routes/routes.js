@@ -121,6 +121,14 @@ router.post("/api/auth/signup", (req, res) => {
 
 });
 
+router.get("/", (req, res) => {
+    if (!req.session.user) {
+        return res.redirect("/login.html");
+    }
+
+    res.redirect("/home");
+});
+
 // =======================================
 // Home
 // =======================================

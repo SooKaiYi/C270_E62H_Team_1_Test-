@@ -52,10 +52,11 @@ app.set("views", pagesPath);
 // =======================================
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
+const walletRoutes = require("./routes/walletRoutes");
 
 app.use("/", routes);
 app.use("/", mapRoutes);
-
+app.use("/wallet", walletRoutes);
 // =======================================
 // 404 Page
 // =======================================
