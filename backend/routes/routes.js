@@ -18,10 +18,6 @@ function saveUsers(users) {
     fs.writeFileSync(userFile, JSON.stringify(users, null, 2));
 }
 
-router.get("/", (req, res) => {
-    res.redirect("/login.html");
-});
-
 // =======================================
 // Admin Middleware
 // =======================================
