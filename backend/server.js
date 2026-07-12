@@ -9,13 +9,13 @@ const app = express();
 // =======================================
 // Body Parser
 // =======================================
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =======================================
 // Static Files
 // =======================================
+
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use(express.static(path.join(__dirname, "../frontend/pages")));
 app.use("/src", express.static(path.join(__dirname, "../frontend/src")));
@@ -50,10 +50,19 @@ app.set("views", [
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
 const walletRoutes = require("./routes/walletRoutes");
-
+const bikeRoutes = require("./routes/bikeRoutes");
+const rentalRoutes = require("./routes/rentalRoutes");
+console.log("routes:", typeof routes);
+console.log("mapRoutes:", typeof mapRoutes);
+console.log("walletRoutes:", typeof walletRoutes);
+console.log("bikeRoutes:", typeof bikeRoutes);
+console.log("rentalRoutes:", typeof rentalRoutes);
 app.use("/", routes);
 app.use("/", mapRoutes);
 app.use("/wallet", walletRoutes);
+app.use("/bikes", bikeRoutes);
+app.use("/rentals", rentalRoutes);
+
 // =======================================
 // 404 Page
 // =======================================

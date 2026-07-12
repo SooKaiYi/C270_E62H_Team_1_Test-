@@ -1,0 +1,69 @@
+[
+    {
+        "id": 1,
+        "userId": 1,
+        "userName": "Administrator",
+        "bikeId": 2,
+        "bikeName": "Mountain Bike",
+        "amount": 8,
+        "status": "Returned",
+        "rentedAt": "2026-07-12T09:37:44.159Z",
+        "returnedAt": "2026-07-12T09:38:36.094Z"
+    },
+    {
+        "id": 2,
+        "userId": 5,
+        "userName": "ky",
+        "bikeId": 2,
+        "bikeName": "Mountain Bike",
+        "amount": 8,
+        "status": "Returned",
+        "rentedAt": "2026-07-12T09:39:50.588Z",
+        "returnedAt": "2026-07-12T09:39:52.863Z"
+    },
+    {
+        "id": 3,
+        "userId": 5,
+        "userName": "ky",
+        "bikeId": 4,
+        "bikeName": "Electric Bike",
+        "amount": 15,
+        "status": "Returned",
+        "rentedAt": "2026-07-12T09:40:18.717Z",
+        "returnedAt": "2026-07-12T09:45:43.766Z"
+    },
+    {
+        "id": 4,
+        "userId": 5,
+        "userName": "ky",
+        "bikeId": 2,
+        "bikeName": "Mountain Bike",
+        "amount": 8,
+        "status": "Returned",
+        "rentedAt": "2026-07-12T09:51:42.178Z",
+        "returnedAt": "2026-07-12T10:10:14.498Z"
+    },
+    {
+        "id": 5,
+        "userId": 5,
+        "userName": "ky",
+        "bikeId": 1,
+        "bikeName": "Normal Bike",
+        "amount": 4,
+        "status": "Returned",
+        "rentedAt": "2026-07-12T09:55:30.391Z",
+        "returnedAt": "2026-07-12T10:10:15.211Z"
+    },
+    {
+        "id": 6,
+        "userId": 5,
+        "userName": "ky",
+        "bikeId": 3,
+        "bikeName": "Road Bike",
+        "amount": 0,
+        "paymentMethod": "2 Way Trip",
+        "status": "Returned",
+        "rentedAt": "2026-07-12T10:43:03.369Z",
+        "returnedAt": "2026-07-12T10:43:07.658Z"
+    }
+]

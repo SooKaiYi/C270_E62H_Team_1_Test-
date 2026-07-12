@@ -169,5 +169,113 @@
         "balanceAfter": 50,
         "status": "Success",
         "timestamp": "2026-07-11T08:06:29.160Z"
+    },
+    {
+        "transactionId": 20,
+        "userId": 1,
+        "type": "Bike Rental",
+        "amount": 8,
+        "balanceAfter": 71,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:37:44.160Z"
+    },
+    {
+        "transactionId": 21,
+        "userId": 5,
+        "type": "Bike Rental",
+        "amount": 8,
+        "balanceAfter": 42,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:39:50.588Z"
+    },
+    {
+        "transactionId": 22,
+        "userId": 5,
+        "type": "Day Pass",
+        "amount": 10,
+        "balanceAfter": 32,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:40:06.743Z"
+    },
+    {
+        "transactionId": 23,
+        "userId": 5,
+        "type": "Bike Rental",
+        "amount": 15,
+        "balanceAfter": 17,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:40:18.717Z"
+    },
+    {
+        "transactionId": 24,
+        "userId": 5,
+        "type": "Bike Rental",
+        "amount": 8,
+        "balanceAfter": 9,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:51:42.178Z"
+    },
+    {
+        "transactionId": 25,
+        "userId": 5,
+        "type": "Bike Rental",
+        "amount": 4,
+        "balanceAfter": 5,
+        "status": "Success",
+        "timestamp": "2026-07-12T09:55:30.391Z"
+    },
+    {
+        "transactionId": 26,
+        "userId": 5,
+        "type": "2 Way Trip",
+        "amount": 5,
+        "balanceAfter": 0,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:30:03.175Z"
+    },
+    {
+        "transactionId": 27,
+        "userId": 5,
+        "type": "Top Up",
+        "amount": 5,
+        "balanceAfter": 5,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:41:54.939Z"
+    },
+    {
+        "transactionId": 28,
+        "userId": 5,
+        "type": "2 Way Trip",
+        "amount": 5,
+        "balanceAfter": 0,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:42:00.338Z"
+    },
+    {
+        "transactionId": 29,
+        "userId": 5,
+        "type": "Top Up",
+        "amount": 5,
+        "balanceAfter": 5,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:42:53.653Z"
+    },
+    {
+        "transactionId": 30,
+        "userId": 5,
+        "type": "2 Way Trip",
+        "amount": 5,
+        "balanceAfter": 0,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:42:58.683Z"
+    },
+    {
+        "transactionId": 31,
+        "userId": 5,
+        "type": "2 Way Trip - Bike Rental",
+        "amount": 0,
+        "balanceAfter": 0,
+        "status": "Success",
+        "timestamp": "2026-07-12T10:43:03.369Z"
     }
 ]

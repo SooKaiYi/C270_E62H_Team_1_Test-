@@ -1,16 +1,21 @@
 const { readJson, writeJson } = require('./jsonFileModel');
 
 const PASS_PRICES = {
-    single_trip: {
-        label: 'Single Trip',
-        price: 2.00,
-        transactionType: 'Single Trip'
+
+    two_way_trip: {
+        label: '2 Way Trip',
+        price: 5.00,
+        credits: 2,
+        transactionType: '2 Way Trip'
     },
+
     day_pass: {
         label: 'Day Pass',
         price: 10.00,
+        credits: 10,
         transactionType: 'Day Pass'
     }
+
 };
 
 class InsufficientBalanceError extends Error {
@@ -40,8 +45,10 @@ async function getOrCreateWallet(userId) {
     if (!wallet) {
         wallet = {
             userId: numericUserId,
-            balance: 0
-        };
+            balance: 0,
+            tripCredits: 0,
+            dayPassCredits: 0
+};
         wallets.push(wallet);
         await writeJson('wallets.json', wallets);
     }
@@ -99,60 +106,136 @@ async function topUpWallet(userId, amount) {
 }
 
 async function purchasePass(userId, passType) {
+
     const selectedPass = PASS_PRICES[passType];
 
     if (!selectedPass) {
-        throw new Error('Please choose a valid pass.');
+        throw new Error("Please choose a valid pass.");
     }
 
+
     return runWalletWrite(async () => {
+
         const numericUserId = normalizeUserId(userId);
-        const wallets = await readJson('wallets.json');
-        const transactions = await readJson('wallet_transactions.json');
-        let wallet = wallets.find((item) => item.userId === numericUserId);
+
+        const wallets = await readJson("wallets.json");
+
+        const transactions = await readJson("wallet_transactions.json");
+
+
+        let wallet = wallets.find(
+            item => item.userId === numericUserId
+        );
+
 
         if (!wallet) {
+
             wallet = {
                 userId: numericUserId,
-                balance: 0
+                balance: 0,
+                tripCredits: 0,
+                dayPassCredits: 0
             };
+
             wallets.push(wallet);
+
         }
+
 
         const currentBalance = Number(wallet.balance);
 
+
         if (currentBalance < selectedPass.price) {
+
+
             transactions.push(createTransaction(transactions, {
+
                 userId: numericUserId,
+
                 type: selectedPass.transactionType,
+
                 amount: selectedPass.price,
+
                 balanceAfter: currentBalance,
-                status: 'Failed'
+
+                status: "Failed"
+
             }));
 
-            await writeJson('wallet_transactions.json', transactions);
-            throw new InsufficientBalanceError('Insufficient wallet balance. Please top up credits first.');
+
+            await writeJson(
+                "wallet_transactions.json",
+                transactions
+            );
+
+
+            throw new InsufficientBalanceError(
+                "Insufficient wallet balance. Please top up credits first."
+            );
+
         }
 
-        const balanceAfter = currentBalance - selectedPass.price;
-        wallet.balance = Number(balanceAfter.toFixed(2));
+
+        // Deduct pass purchase price
+        wallet.balance = Number(
+            (currentBalance - selectedPass.price).toFixed(2)
+        );
+
+
+        // Add rental credits
+        if (passType === "two_way_trip") {
+
+            wallet.tripCredits += selectedPass.credits;
+
+        }
+
+
+        if (passType === "day_pass") {
+
+            wallet.dayPassCredits += selectedPass.credits;
+
+        }
+
+
 
         transactions.push(createTransaction(transactions, {
+
             userId: numericUserId,
+
             type: selectedPass.transactionType,
+
             amount: selectedPass.price,
+
             balanceAfter: wallet.balance,
-            status: 'Success'
+
+            status: "Success"
+
         }));
 
-        await writeJson('wallets.json', wallets);
-        await writeJson('wallet_transactions.json', transactions);
+
+        await writeJson(
+            "wallets.json",
+            wallets
+        );
+
+
+        await writeJson(
+            "wallet_transactions.json",
+            transactions
+        );
+
 
         return {
+
             pass: selectedPass,
+
             balanceAfter: wallet.balance
+
         };
+
+
     });
+
 }
 
 async function getTransactionHistory(userId) {

@@ -24,11 +24,13 @@ function saveUsers(users) {
 
 function requireAdmin(req, res, next) {
 
-    if (!req.session.user) {
+    if (!req.session || !req.session.user) {
         return res.redirect("/login.html");
     }
 
-    if (req.session.user.role !== "Admin") {
+    if (
+        String(req.session.user.role).toLowerCase() !== "admin"
+    ) {
         return res.status(403).send("Access Denied");
     }
 
