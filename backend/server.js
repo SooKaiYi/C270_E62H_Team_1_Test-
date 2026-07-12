@@ -49,6 +49,7 @@ app.set("views", [
 
 const routes = require("./routes/routes");
 const mapRoutes = require("./routes/mapRoutes");
+const rewardsRoutes = require("./routes/rewardsRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const bikeRoutes = require("./routes/bikeRoutes");
 const rentalRoutes = require("./routes/rentalRoutes");
@@ -59,6 +60,7 @@ console.log("bikeRoutes:", typeof bikeRoutes);
 console.log("rentalRoutes:", typeof rentalRoutes);
 app.use("/", routes);
 app.use("/", mapRoutes);
+app.use("/", rewardsRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/bikes", bikeRoutes);
 app.use("/rentals", rentalRoutes);
