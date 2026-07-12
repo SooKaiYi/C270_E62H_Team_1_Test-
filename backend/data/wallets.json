@@ -1,14 +1,20 @@
 [
     {
         "userId": 1,
-        "balance": 79
+        "balance": 71,
+        "tripCredits": 2,
+        "dayPassCredits": 10
     },
     {
         "userId": 2,
-        "balance": 11
+        "balance": 11,
+        "tripCredits": 0,
+        "dayPassCredits": 0
     },
     {
         "userId": 5,
-        "balance": 50
+        "balance": 0,
+        "tripCredits": 5,
+        "dayPassCredits": 0
     }
 ]
