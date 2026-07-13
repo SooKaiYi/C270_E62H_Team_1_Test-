@@ -4,6 +4,10 @@ const bikeStations = JSON.parse(
 
 let markers = [];
 
+let selectingLocation = false;
+let userMarker = null;
+let nearestLine = null;
+
 // Singapore bounds
 const singaporeBounds = [
   [1.15, 103.60],
@@ -160,5 +164,89 @@ document
         searchLocation();
 
     }
+
+});
+
+document
+.getElementById("selectLocationBtn")
+.addEventListener("click", function(){
+
+    selectingLocation = true;
+
+    alert("Click anywhere on the map to choose your location.");
+
+});
+
+map.on("click", function(e){
+
+    if(!selectingLocation){
+        return;
+    }
+
+    selectingLocation = false;
+
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+
+    if(userMarker){
+        map.removeLayer(userMarker);
+    }
+
+    if(nearestLine){
+        map.removeLayer(nearestLine);
+    }
+
+    userMarker = L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup("📍 Selected Location")
+        .openPopup();
+
+    let nearestStation = bikeStations[0];
+
+    let minDistance = calculateDistance(
+        lat,
+        lng,
+        bikeStations[0].lat,
+        bikeStations[0].lng
+    );
+
+    bikeStations.forEach(station => {
+
+        const distance = calculateDistance(
+            lat,
+            lng,
+            station.lat,
+            station.lng
+        );
+
+        if(distance < minDistance){
+
+            minDistance = distance;
+            nearestStation = station;
+
+        }
+
+    });
+
+    nearestLine = L.polyline([
+        [lat, lng],
+        [nearestStation.lat, nearestStation.lng]
+    ]).addTo(map);
+
+    const distanceText =
+        minDistance < 1
+            ? `${(minDistance * 1000).toFixed(0)}m`
+            : `${minDistance.toFixed(2)}km`;
+
+    document.getElementById("searchResults").innerHTML = `
+        <strong>📍 Selected Location</strong><br>
+        <strong>🚲 Nearest Bike Station:</strong> ${nearestStation.name}<br>
+        <strong>Distance:</strong> ${distanceText}
+    `;
+
+    document
+        .getElementById("searchResults")
+        .classList
+        .add("show");
 
 });
