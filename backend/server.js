@@ -53,6 +53,7 @@ const rewardsRoutes = require("./routes/rewardsRoutes");
 const walletRoutes = require("./routes/walletRoutes");
 const bikeRoutes = require("./routes/bikeRoutes");
 const rentalRoutes = require("./routes/rentalRoutes");
+const bikeRepairFeatureRoutes = require("./routes/bikeRepairFeatureRoutes");
 console.log("routes:", typeof routes);
 console.log("mapRoutes:", typeof mapRoutes);
 console.log("walletRoutes:", typeof walletRoutes);
@@ -64,6 +65,7 @@ app.use("/", rewardsRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/bikes", bikeRoutes);
 app.use("/rentals", rentalRoutes);
+app.use("/repair", bikeRepairFeatureRoutes);
 
 // =======================================
 // 404 Page
