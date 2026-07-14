@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/home.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <title>CityScoot - Track Ride</title>
+    <style>
+        #map {
+            width: 100%;
+            height: 320px;
+            border-radius: 16px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+        .endpoint-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .endpoint-stats .stat-box {
+            flex: 1 1 140px;
+            min-width: 140px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="/home">🚲 CityScoot</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/bikes">Bikes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/map">Map</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/wallet">Wallet</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/tracker">Tracker</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/leaderboard">Leaderboard</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm p-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div>
+                            <p class="text-uppercase text-muted mb-1">Distance Tracker</p>
+                            <h2 class="mb-1">Live Ride Tracker</h2>
+                            <p class="text-muted mb-0">Track your ride in real time, keep your weekly goal in sight, and jump straight into the leaderboard when you are done.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-outline-primary" href="/home">Back to Home</a>
+                            <a class="btn btn-primary" href="/leaderboard">View Leaderboard</a>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <p class="mb-1 text-muted">Distance</p>
+                                <h3 id="distance" class="mb-0">0.00</h3><span>km</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <p class="mb-1 text-muted">Calories</p>
+                                <h3 id="calories" class="mb-0">0</h3><span>kcal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border rounded p-3 mb-3">
+                        <label for="weeklyGoalInput" class="form-label">Weekly calorie goal</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input id="weeklyGoalInput" class="form-control" type="number" min="100" step="50" placeholder="15000">
+                            <button id="saveGoalBtn" class="btn btn-warning" type="button">Set Goal</button>
+                        </div>
+                        <div class="progress mt-3" style="height: 10px;">
+                            <div id="goalProgressFill" class="progress-bar bg-success" style="width: 0%"></div>
+                        </div>
+                        <p id="goalStatus" class="mt-2 mb-0 text-muted">No goal set yet.</p>
+                    </div>
+
+                    <p id="status" class="fw-semibold">Tracking Location...</p>
+                    <div id="map"></div>
+                    <div class="endpoint-stats">
+                        <div class="border rounded p-3 stat-box">
+                            <p class="text-muted mb-1">Start point</p>
+                            <p id="startPointText" class="mb-0">Waiting for GPS</p>
+                        </div>
+                        <div class="border rounded p-3 stat-box">
+                            <p class="text-muted mb-1">End point</p>
+                            <p id="endPointText" class="mb-0">Waiting for GPS</p>
+                        </div>
+                        <div class="border rounded p-3 stat-box">
+                            <p class="text-muted mb-1">Displacement</p>
+                            <h3 id="displacement" class="mb-0">0.00</h3><span>km</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap mt-3">
+                        <button id="openMapBtn" class="btn btn-outline-secondary" type="button">Open Map Page</button>
+                        <button id="endRideBtn" class="btn btn-primary" type="button">End Ride</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let totalDistance = 0;
+        let lastCoords = null;
+        let weeklyCalories = 0;
+        let weeklyGoal = null;
+        let weekKey = getWeekKey(new Date());
+
+        const storageKey = 'bike-tracker-weekly-goal';
+        const goalInput = document.getElementById('weeklyGoalInput');
+        const saveGoalBtn = document.getElementById('saveGoalBtn');
+        const progressFill = document.getElementById('goalProgressFill');
+        const goalStatus = document.getElementById('goalStatus');
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function getWeekKey(date) {
+            const weekDate = new Date(date);
+            const day = weekDate.getDay() || 7;
+            weekDate.setHours(0, 0, 0, 0);
+            weekDate.setDate(weekDate.getDate() - day + 1);
+            return weekDate.toISOString().slice(0, 10);
+        }
+
+        function saveWeeklyState() {
+            localStorage.setItem(storageKey, JSON.stringify({
+                weekKey,
+                goal: weeklyGoal,
+                burned: weeklyCalories
+            }));
+        }
+
+        function updateGoalUI() {
+            if (!weeklyGoal || weeklyGoal <= 0) {
+                progressFill.style.width = '0%';
+                progressFill.textContent = '';
+                goalStatus.textContent = 'No goal set yet.';
+                return;
+            }
+
+            const percent = Math.min(100, Math.round((weeklyCalories / weeklyGoal) * 100));
+            progressFill.style.width = `${percent}%`;
+            progressFill.textContent = `${percent}%`;
+
+            if (weeklyCalories >= weeklyGoal) {
+                goalStatus.textContent = 'Weekly goal reached! Great job.';
+            } else {
+                const remaining = Math.max(0, weeklyGoal - weeklyCalories);
+                goalStatus.textContent = `${weeklyCalories} / ${weeklyGoal} kcal burned. ${remaining} kcal left this week.`;
+            }
+        }
+
+        function loadWeeklyState() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(storageKey));
+                if (saved && saved.weekKey === weekKey) {
+                    weeklyGoal = Number(saved.goal) || null;
+                    weeklyCalories = Number(saved.burned) || 0;
+                } else {
+                    weeklyGoal = Number(saved?.goal) || null;
+                    weeklyCalories = 0;
+                    weekKey = getWeekKey(new Date());
+                }
+            } catch (error) {
+                weeklyGoal = null;
+                weeklyCalories = 0;
+            }
+
+            if (weeklyGoal) {
+                goalInput.value = weeklyGoal;
+            }
+
+            updateGoalUI();
+            saveWeeklyState();
+        }
+
+        let pathPolyline = null;
+        let pathCoordinates = [];
+        let startMarker = null;
+        let currentMarker = null;
+        let endMarker = null;
+        let startCoords = null;
+        let endCoords = null;
+        let map = null;
+
+        function initTrackerMap() {
+            map = L.map('map').setView([1.3000, 103.8000], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            pathPolyline = L.polyline([], { color: 'blue', weight: 4 }).addTo(map);
+            return map;
+        }
+
+        function formatLatLng(coords) {
+            return coords ? `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'Waiting for GPS';
+        }
+
+        function updateMap(lat, lng) {
+            const point = [lat, lng];
+            pathCoordinates.push(point);
+            pathPolyline.setLatLngs(pathCoordinates);
+
+            if (!startCoords) {
+                startCoords = { lat, lng };
+                startMarker = L.marker(point).addTo(map).bindPopup('Start point').openPopup();
+                document.getElementById('startPointText').innerText = formatLatLng(startCoords);
+            }
+
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+            currentMarker = L.marker(point).addTo(map).bindPopup('Current location').openPopup();
+
+            document.getElementById('endPointText').innerText = formatLatLng({ lat, lng });
+            map.setView(point, map.getZoom() || 15);
+            updateDisplacementUI();
+        }
+
+        function updateDisplacementUI() {
+            const displacement = startCoords && lastCoords
+                ? calculateDistance(startCoords.lat, startCoords.lng, lastCoords.lat, lastCoords.lng)
+                : 0;
+            document.getElementById('displacement').innerText = displacement.toFixed(2);
+        }
+
+        async function saveRideDistance(distance) {
+            try {
+                const response = await fetch('/tracker/distance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ distance })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.warn('Unable to save ride distance:', error);
+                    return null;
+                }
+
+                const result = await response.json();
+                return result.distance ?? result.tracker?.distance ?? null;
+            } catch (error) {
+                console.warn('Network error saving ride distance:', error);
+                return null;
+            }
+        }
+
+        async function endRide() {
+            if (!startCoords || !lastCoords) {
+                document.getElementById('status').innerText = 'Ride not started yet.';
+                return;
+            }
+
+            endCoords = { ...lastCoords };
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+            endMarker = L.marker([endCoords.lat, endCoords.lng]).addTo(map).bindPopup('End point').openPopup();
+
+            const displacement = calculateDistance(startCoords.lat, startCoords.lng, endCoords.lat, endCoords.lng);
+            document.getElementById('displacement').innerText = displacement.toFixed(2);
+            document.getElementById('status').innerText = `Ride ended. Displacement: ${displacement.toFixed(2)} km`;
+            document.getElementById('endPointText').innerText = formatLatLng(endCoords);
+
+            const updatedDistance = await saveRideDistance(totalDistance);
+            if (updatedDistance !== null) {
+                document.getElementById('status').innerText += ' Leaderboard updated.';
+            }
+        }
+
+        function setWeeklyGoal() {
+            const parsedGoal = Number(goalInput.value);
+            if (!Number.isFinite(parsedGoal) || parsedGoal <= 0) {
+                goalStatus.textContent = 'Please enter a valid calorie goal.';
+                return;
+            }
+
+            weeklyGoal = Math.round(parsedGoal);
+            saveWeeklyState();
+            updateGoalUI();
+            goalInput.value = '';
+        }
+
+        saveGoalBtn.addEventListener('click', setWeeklyGoal);
+        goalInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                setWeeklyGoal();
+            }
+        });
+
+        loadWeeklyState();
+        initTrackerMap();
+
+        navigator.geolocation.watchPosition((position) => {
+            const { latitude, longitude } = position.coords;
+            if (lastCoords) {
+                const dist = calculateDistance(lastCoords.lat, lastCoords.lng, latitude, longitude);
+                if (dist > 0.001) {
+                    totalDistance += dist;
+                    weeklyCalories += Math.round(dist * 30);
+                    document.getElementById('distance').innerText = totalDistance.toFixed(2);
+                    document.getElementById('calories').innerText = weeklyCalories;
+                    saveWeeklyState();
+                    updateGoalUI();
+                }
+            }
+
+            lastCoords = { lat: latitude, lng: longitude };
+            updateMap(latitude, longitude);
+            document.getElementById('status').innerText = 'Signal: Active';
+        }, (err) => {
+            document.getElementById('status').innerText = 'Error: Enable GPS';
+        }, { enableHighAccuracy: true });
+
+        document.getElementById('openMapBtn').addEventListener('click', () => {
+            location.href = '/map';
+        });
+        document.getElementById('endRideBtn').addEventListener('click', endRide);
+    </script>
+</body>
+</html>

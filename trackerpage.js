@@ -6,12 +6,14 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'backend', 'controllers', 'routes', 'data'));
 app.use(express.static(path.join(__dirname, 'frontend')));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Placeholder session state until a real login system is connected
 let userSession = {
     isLoggedIn: false,
     hasRented: true,
-    name: 'Placeholder Rider'
+    name: 'Placeholder Rider',
+    distance: 0
 };
 
 app.get('/', (req, res) => {
@@ -40,18 +42,33 @@ app.get('/tracker', (req, res) => {
     }
 });
 
+app.post('/tracker/distance', (req, res) => {
+    if (!userSession.isLoggedIn || !userSession.hasRented) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const distance = Number(req.body.distance);
+    if (!Number.isFinite(distance) || distance < 0) {
+        return res.status(400).json({ error: 'Invalid distance' });
+    }
+
+    userSession.distance = (Number(userSession.distance) || 0) + distance;
+    return res.json({ distance: userSession.distance });
+});
+
 app.get('/leaderboard', (req, res) => {
     if (userSession.isLoggedIn && userSession.hasRented) {
+        const userDistance = Number(userSession.distance) || 0;
         const leaderboardData = {
             global: [
                 { name: 'Ava', city: 'London', distance: 142.8 },
                 { name: 'Noah', city: 'Paris', distance: 129.4 },
-                { name: userSession.name, city: 'Your City', distance: 98.6 },
+                { name: userSession.name, city: 'Your City', distance: userDistance },
                 { name: 'Mia', city: 'Berlin', distance: 87.2 },
                 { name: 'Liam', city: 'Rome', distance: 74.5 }
             ],
             friends: [
-                { name: userSession.name, city: 'Your City', distance: 98.6 },
+                { name: userSession.name, city: 'Your City', distance: userDistance },
                 { name: 'Sam', city: 'Madrid', distance: 61.3 },
                 { name: 'Ellie', city: 'Dublin', distance: 57.9 },
                 { name: 'Owen', city: 'Oslo', distance: 43.1 }

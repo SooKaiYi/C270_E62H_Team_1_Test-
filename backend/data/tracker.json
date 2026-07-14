@@ -1,0 +1,11 @@
+﻿[
+    {
+        "userId": 5,
+        "userName": "ky",
+        "city": "Your City",
+        "bikeName": "Mountain Bike",
+        "distance": 12.35,
+        "rides": 2,
+        "lastRideAt": "2026-07-12T10:10:15.211Z"
+    }
+]

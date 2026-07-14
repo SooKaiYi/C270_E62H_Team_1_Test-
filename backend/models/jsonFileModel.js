@@ -10,7 +10,13 @@ function getDataPath(fileName) {
 async function readJson(fileName, fallbackValue = []) {
     try {
         const fileContent = await fs.readFile(getDataPath(fileName), 'utf8');
-        return JSON.parse(fileContent);
+        const trimmedContent = fileContent.replace(/^\uFEFF/, '').trim();
+
+        if (!trimmedContent) {
+            return fallbackValue;
+        }
+
+        return JSON.parse(trimmedContent);
     } catch (error) {
         if (error.code === 'ENOENT') {
             return fallbackValue;
