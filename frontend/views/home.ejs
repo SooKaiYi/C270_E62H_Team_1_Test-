@@ -80,7 +80,6 @@ Rewards
 </ul>
 
 <!-- PROFILE -->
-
 <div class="dropdown">
 
 <button class="btn btn-light dropdown-toggle"
@@ -95,7 +94,9 @@ data-bs-toggle="dropdown">
 
 <ul class="dropdown-menu dropdown-menu-end p-3" style="width:250px;">
 
-<h5><%= user.name %></h5>
+<a href="/profile" class="text-decoration-none text-dark">
+<h5 class="mb-0"><%= user.name %></h5>
+</a>
 
 <p class="text-muted mb-1">
 
@@ -110,6 +111,11 @@ data-bs-toggle="dropdown">
 </span>
 
 <hr>
+
+<a class="dropdown-item" href="/profile">
+<i class="fa-solid fa-id-badge"></i>
+Profile
+</a>
 
 <a class="dropdown-item" href="/wallet">
 <i class="fa-solid fa-wallet"></i>
