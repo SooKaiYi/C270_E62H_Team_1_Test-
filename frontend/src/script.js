@@ -52,10 +52,11 @@ async function login(event) {
         }
 
     }
-    catch (error) {
+    catch {
 
         result.innerText = "Cannot connect to server";
 
     }
 
 }
+window.login = login;
