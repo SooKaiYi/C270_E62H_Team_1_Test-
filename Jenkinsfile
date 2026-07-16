@@ -59,6 +59,9 @@ pipeline {
         //OWASP Dependency Check configuration
 
 
+        // Quality Gate will be added after SonarQube, OWASP and testing stages are integrated.
+
+
         stage('Build Docker Image') {
             steps {
                 bat '''
@@ -103,6 +106,7 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     input message: 'Staging passed. Deploy to Production?',
                           ok: 'Deploy'
+                }
             }
         }
 
