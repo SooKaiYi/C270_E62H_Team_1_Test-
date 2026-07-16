@@ -33,7 +33,7 @@ async function submitReferral() {
             resultDiv.className = 'mt-2 text-danger fw-bold';
             resultDiv.innerHTML = `❌ ${data.message}`;
         }
-    } catch (error) {
+    } catch {
         const resultDiv = document.getElementById('referralResult');
         resultDiv.className = 'mt-2 text-danger fw-bold';
         resultDiv.innerHTML = '❌ Something went wrong. Please try again.';
@@ -83,7 +83,7 @@ async function calculateRide() {
                     <br><small>Rides under 10 minutes earn no points</small>
                 </div>`;
         }
-    } catch (error) {
+    } catch  {
         box.innerHTML = `<div class="alert alert-danger">❌ Something went wrong.</div>`;
     }
 }
@@ -116,9 +116,12 @@ async function redeem(points) {
             msgDiv.className = 'mt-3 alert alert-danger';
             msgDiv.innerHTML = `❌ ${data.message}`;
         }
-    } catch (error) {
+    } catch {
         const msgDiv = document.getElementById('redeemMessage');
         msgDiv.className = 'mt-3 alert alert-danger';
         msgDiv.innerHTML = '❌ Something went wrong.';
     }
 }
+window.copyCode = copyCode;
+window.calculateRide = calculateRide;
+window.redeem = redeem;

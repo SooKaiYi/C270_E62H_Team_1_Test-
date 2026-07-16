@@ -23,9 +23,12 @@ async function readJson(fileName, fallbackValue = []) {
         }
 
         console.error(`Unable to read ${fileName}:`, error.message);
-        throw new Error('Unable to load local data. Please try again.');
+        throw new Error('Unable to load local data. Please try again.',{
+            cause: error
+        });
+        
     }
-}
+};
 
 async function writeJson(fileName, data) {
     try {
@@ -34,7 +37,9 @@ async function writeJson(fileName, data) {
         await fs.writeFile(getDataPath(fileName), `${fileContent}\n`, 'utf8');
     } catch (error) {
         console.error(`Unable to write ${fileName}:`, error.message);
-        throw new Error('Unable to save local data. Please try again.');
+        throw new Error('Unable to save local data. Please try again.',{
+            cause: error
+        });
     }
 }
 

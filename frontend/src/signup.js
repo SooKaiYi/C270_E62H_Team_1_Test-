@@ -75,3 +75,4 @@ async function signup(event) {
     }
 
 }
+window.signup = signup;

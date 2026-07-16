@@ -1,3 +1,4 @@
+/* global L */
 const bikeStations = JSON.parse(
     document.getElementById("bike-data").textContent
 );

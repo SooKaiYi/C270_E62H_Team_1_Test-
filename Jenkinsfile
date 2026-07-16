@@ -2,11 +2,17 @@ pipeline {
 
     agent any
 
+    environment {
+        IMAGE_NAME = "bike-app"
+        STAGING_CONTAINER = "bike-staging"
+        PRODUCTION_CONTAINER = "bike-production"
+    }
+
     stages {
 
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                echo 'Repository cloned'
+                checkout scm
             }
         }
 
@@ -16,21 +22,45 @@ pipeline {
             }
         }
 
+        stage('Lint') {
+            steps {
+                bat 'npx eslint .'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'npm test'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t bike-app .'
+                bat 'docker build -t %IMAGE_NAME% .'
             }
         }
 
-        stage('Stop Existing Container') {
+        stage('Deploy to Staging') {
             steps {
-                bat 'docker rm -f bike-container || exit /b 0'
+                bat '''
+                docker rm -f %STAGING_CONTAINER% || exit /b 0
+                docker run -d -p 3001:3000 --name %STAGING_CONTAINER% %IMAGE_NAME%
+                '''
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Approval') {
             steps {
-                bat 'docker run -d -p 3000:3000 --name bike-container bike-app'
+                input message: 'Deploy to Production?'
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                bat '''
+                docker rm -f %PRODUCTION_CONTAINER% || exit /b 0
+                docker run -d -p 3000:3000 --name %PRODUCTION_CONTAINER% %IMAGE_NAME%
+                '''
             }
         }
 
@@ -45,5 +75,4 @@ pipeline {
             echo 'Deployment Failed'
         }
     }
-
 }

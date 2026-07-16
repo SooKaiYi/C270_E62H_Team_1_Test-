@@ -93,7 +93,7 @@ async function rentBike(user) {
 
         const bikePrice = Number(bike.price);
 
-        let paymentMethod = "Wallet";
+        let paymentMethod;
         let chargedAmount = bikePrice;
 
 
