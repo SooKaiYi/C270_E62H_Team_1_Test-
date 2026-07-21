@@ -30,18 +30,16 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                sh 'curl -f http://host.docker.internal:3000/login.html || exit 1'
+                sh "docker run -d -p 3000:3000 --name bike-container bike-app:${env.BUILD_NUMBER}"
             }
         }
 
         stage('Health Check') {
             steps {
                 sh 'sleep 5'
-                sh 'curl -f http://localhost:3000/login.html || exit 1'
+                sh 'curl -f http://host.docker.internal:3000/login.html || exit 1'
             }
         }
-
-    }
 
     post {
         success {
