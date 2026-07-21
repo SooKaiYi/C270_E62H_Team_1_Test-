@@ -40,6 +40,16 @@ pipeline {
                 bat 'npm ci'
             }
         }
+        
+        stage('Code Quality Checks') {
+            steps {
+                echo 'Running ESLint (Code Quality)...'
+                bat 'npm run lint'
+
+                echo 'Running Prettier (Formatting Check)...'
+                bat 'npm run format:check'
+            }
+        }
 
         stage('Code Quality - ESLint') {
             steps {

@@ -1,0 +1,5 @@
+# Ignore all EJS templates
+*.ejs
+**/*.ejs
+frontend/views/
+node_modules/
