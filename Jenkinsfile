@@ -41,6 +41,8 @@ pipeline {
             }
         }
 
+    }
+
     post {
         success {
             echo "Deployment Successful - bike-app:${env.BUILD_NUMBER} is live and responding"
