@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "test": "jest"
+    "test": "jest --ci --coverage"
   },
   "keywords": [],
   "author": "",
@@ -17,9 +17,6 @@
     "express-session": "^1.19.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.7.0",
-    "globals": "^17.7.0",
-    "jest": "^30.4.2"
+    "jest": "^29.7.0"
   }
 }
