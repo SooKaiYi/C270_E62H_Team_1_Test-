@@ -1,7 +1,7 @@
-const pool = require("../config/database");
+const pool = require('../config/database');
 
 async function getAdminWalletDashboard() {
-    const [walletRows] = await pool.execute(`
+  const [walletRows] = await pool.execute(`
         SELECT
             u.id AS userId,
             u.name,
@@ -22,7 +22,7 @@ async function getAdminWalletDashboard() {
         ORDER BY u.id
     `);
 
-    const [transactionRows] = await pool.execute(`
+  const [transactionRows] = await pool.execute(`
         SELECT
             wt.transactionId,
             wt.userId,
@@ -41,7 +41,7 @@ async function getAdminWalletDashboard() {
             wt.transactionId DESC
     `);
 
-    const [statisticsRows] = await pool.execute(`
+  const [statisticsRows] = await pool.execute(`
         SELECT
             (
                 SELECT COUNT(*)
@@ -81,35 +81,31 @@ async function getAdminWalletDashboard() {
             ) AS totalSpending
     `);
 
-    const statistics = statisticsRows[0];
+  const statistics = statisticsRows[0];
 
-    return {
-        wallets: walletRows.map((wallet) => ({
-            ...wallet,
-            balance: Number(wallet.balance),
-            transactionCount: Number(wallet.transactionCount)
-        })),
+  return {
+    wallets: walletRows.map((wallet) => ({
+      ...wallet,
+      balance: Number(wallet.balance),
+      transactionCount: Number(wallet.transactionCount),
+    })),
 
-        transactions: transactionRows.map((transaction) => ({
-            ...transaction,
-            amount: Number(transaction.amount),
-            balanceAfter: Number(transaction.balanceAfter)
-        })),
+    transactions: transactionRows.map((transaction) => ({
+      ...transaction,
+      amount: Number(transaction.amount),
+      balanceAfter: Number(transaction.balanceAfter),
+    })),
 
-        statistics: {
-            totalMembers: Number(statistics.totalMembers),
-            totalWalletBalance: Number(
-                statistics.totalWalletBalance
-            ),
-            totalTransactions: Number(
-                statistics.totalTransactions
-            ),
-            totalTopUps: Number(statistics.totalTopUps),
-            totalSpending: Number(statistics.totalSpending)
-        }
-    };
+    statistics: {
+      totalMembers: Number(statistics.totalMembers),
+      totalWalletBalance: Number(statistics.totalWalletBalance),
+      totalTransactions: Number(statistics.totalTransactions),
+      totalTopUps: Number(statistics.totalTopUps),
+      totalSpending: Number(statistics.totalSpending),
+    },
+  };
 }
 
 module.exports = {
-    getAdminWalletDashboard
+  getAdminWalletDashboard,
 };

@@ -1,22 +1,21 @@
-const bikeModel = require("../models/bikeModel");
+const bikeModel = require('../models/bikeModel');
 
 // =======================================
 // Member - View All Bikes
 // =======================================
 
 async function showBikes(req, res, next) {
-    try {
-        const bikes = await bikeModel.getAllBikes();
+  try {
+    const bikes = await bikeModel.getAllBikes();
 
-        res.render("bikes/index", {
-            title: "Bikes",
-            user: req.session ? req.session.user : null,
-            bikes
-        });
-
-    } catch (error) {
-        next(error);
-    }
+    res.render('bikes/index', {
+      title: 'Bikes',
+      user: req.session ? req.session.user : null,
+      bikes,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 // =======================================
@@ -24,18 +23,17 @@ async function showBikes(req, res, next) {
 // =======================================
 
 async function showAdminBikes(req, res, next) {
-    try {
-        const bikes = await bikeModel.getAllBikes();
+  try {
+    const bikes = await bikeModel.getAllBikes();
 
-        res.render("bikes/admin", {
-            title: "Manage Bikes",
-            user: req.session.user,
-            bikes
-        });
-
-    } catch (error) {
-        next(error);
-    }
+    res.render('bikes/admin', {
+      title: 'Manage Bikes',
+      user: req.session.user,
+      bikes,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 // =======================================
@@ -43,12 +41,10 @@ async function showAdminBikes(req, res, next) {
 // =======================================
 
 function showAddBike(req, res) {
-
-    res.render("bikes/add", {
-        title: "Add Bike",
-        user: req.session.user
-    });
-
+  res.render('bikes/add', {
+    title: 'Add Bike',
+    user: req.session.user,
+  });
 }
 
 // =======================================
@@ -56,19 +52,13 @@ function showAddBike(req, res) {
 // =======================================
 
 async function addBike(req, res, next) {
+  try {
+    await bikeModel.addBike(req.body);
 
-    try {
-
-        await bikeModel.addBike(req.body);
-
-        res.redirect("/bikes/admin");
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
+    res.redirect('/bikes/admin');
+  } catch (error) {
+    next(error);
+  }
 }
 
 // =======================================
@@ -76,27 +66,21 @@ async function addBike(req, res, next) {
 // =======================================
 
 async function showEditBike(req, res, next) {
+  try {
+    const bike = await bikeModel.getBikeById(req.params.id);
 
-    try {
-
-        const bike = await bikeModel.getBikeById(req.params.id);
-
-        if (!bike) {
-            return res.status(404).send("Bike not found");
-        }
-
-        res.render("bikes/edit", {
-            title: "Edit Bike",
-            user: req.session.user,
-            bike
-        });
-
-    } catch (error) {
-
-        next(error);
-
+    if (!bike) {
+      return res.status(404).send('Bike not found');
     }
 
+    res.render('bikes/edit', {
+      title: 'Edit Bike',
+      user: req.session.user,
+      bike,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 // =======================================
@@ -104,22 +88,13 @@ async function showEditBike(req, res, next) {
 // =======================================
 
 async function updateBike(req, res, next) {
+  try {
+    await bikeModel.updateBike(req.params.id, req.body);
 
-    try {
-
-        await bikeModel.updateBike(
-            req.params.id,
-            req.body
-        );
-
-        res.redirect("/bikes/admin");
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
+    res.redirect('/bikes/admin');
+  } catch (error) {
+    next(error);
+  }
 }
 
 // =======================================
@@ -127,29 +102,21 @@ async function updateBike(req, res, next) {
 // =======================================
 
 async function deleteBike(req, res, next) {
+  try {
+    await bikeModel.deleteBike(req.params.id);
 
-    try {
-
-        await bikeModel.deleteBike(req.params.id);
-
-        res.redirect("/bikes/admin");
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
+    res.redirect('/bikes/admin');
+  } catch (error) {
+    next(error);
+  }
 }
 
-
-
 module.exports = {
-    showBikes,
-    showAdminBikes,
-    showAddBike,
-    addBike,
-    showEditBike,
-    updateBike,
-    deleteBike,
+  showBikes,
+  showAdminBikes,
+  showAddBike,
+  addBike,
+  showEditBike,
+  updateBike,
+  deleteBike,
 };

@@ -1,35 +1,41 @@
 <%- include('../partials/header') %>
-<link rel="stylesheet" href="/styles/wallet.css">
+<link rel="stylesheet" href="/styles/wallet.css" />
 
-<section class="page-heading d-flex justify-content-between align-items-center flex-wrap gap-3">
-    <div>
-        <h1 class="fw-bold mb-1">Buy Ride Pass</h1>
-        <p class="mb-0">Choose a pass and pay using your wallet credits.</p>
-    </div>
-    <a href="/wallet" class="btn btn-light btn-sm">Back to Wallet</a>
+<section
+  class="page-heading d-flex justify-content-between align-items-center flex-wrap gap-3"
+>
+  <div>
+    <h1 class="fw-bold mb-1">Buy Ride Pass</h1>
+    <p class="mb-0">Choose a pass and pay using your wallet credits.</p>
+  </div>
+  <a href="/wallet" class="btn btn-light btn-sm">Back to Wallet</a>
 </section>
 
 <section class="row g-4">
-    <% Object.keys(passes).forEach((key) => { %>
-        <div class="col-md-6">
-            <form action="/wallet/pass" method="POST" class="plan-card h-100">
-                <input type="hidden" name="passType" value="<%= key %>">
-                <div class="balance-icon mx-auto"><%= key === 'single_trip' ? '🚲' : '🌞' %></div>
-                <h2 class="h4 fw-bold mt-3"><%= passes[key].label %></h2>
-                <p class="plan-price"><%= formatCurrency(passes[key].price) %></p>
-                <p class="text-muted">
-                    <% if (key === 'single_trip') { %>
-                        Best for one quick ride paid from your wallet balance.
-                    <% } else { %>
-                        Best for flexible rides throughout the day.
-                    <% } %>
-                </p>
-                <button type="submit" class="btn btn-bike w-100" data-confirm-purchase="<%= passes[key].label %>">
-                    Buy <%= passes[key].label %>
-                </button>
-            </form>
-        </div>
-    <% }) %>
+  <% Object.keys(passes).forEach((key) => { %>
+  <div class="col-md-6">
+    <form action="/wallet/pass" method="POST" class="plan-card h-100">
+      <input type="hidden" name="passType" value="<%= key %>" />
+      <div class="balance-icon mx-auto">
+        <%= key === 'single_trip' ? '🚲' : '🌞' %>
+      </div>
+      <h2 class="h4 fw-bold mt-3"><%= passes[key].label %></h2>
+      <p class="plan-price"><%= formatCurrency(passes[key].price) %></p>
+      <p class="text-muted">
+        <% if (key === 'single_trip') { %> Best for one quick ride paid from
+        your wallet balance. <% } else { %> Best for flexible rides throughout
+        the day. <% } %>
+      </p>
+      <button
+        type="submit"
+        class="btn btn-bike w-100"
+        data-confirm-purchase="<%= passes[key].label %>"
+      >
+        Buy <%= passes[key].label %>
+      </button>
+    </form>
+  </div>
+  <% }) %>
 </section>
 
 <script src="/src/wallet.js"></script>

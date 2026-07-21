@@ -1,36 +1,36 @@
-const pool = require("../config/database");
+const pool = require('../config/database');
 
 const PASS_PRICES = {
-    two_way_trip: {
-        label: "2 Way Trip",
-        price: 5.0,
-        credits: 2,
-        transactionType: "2 Way Trip"
-    },
+  two_way_trip: {
+    label: '2 Way Trip',
+    price: 5.0,
+    credits: 2,
+    transactionType: '2 Way Trip',
+  },
 
-    day_pass: {
-        label: "Day Pass",
-        price: 10.0,
-        credits: 10,
-        transactionType: "Day Pass"
-    }
+  day_pass: {
+    label: 'Day Pass',
+    price: 10.0,
+    credits: 10,
+    transactionType: 'Day Pass',
+  },
 };
 
 class InsufficientBalanceError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = "InsufficientBalanceError";
-    }
+  constructor(message) {
+    super(message);
+    this.name = 'InsufficientBalanceError';
+  }
 }
 
 function normalizeUserId(userId) {
-    const numericUserId = Number(userId);
+  const numericUserId = Number(userId);
 
-    if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
-        throw new Error("Invalid user ID.");
-    }
+  if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+    throw new Error('Invalid user ID.');
+  }
 
-    return numericUserId;
+  return numericUserId;
 }
 
 // =======================================
@@ -38,10 +38,10 @@ function normalizeUserId(userId) {
 // =======================================
 
 async function getOrCreateWallet(userId) {
-    const numericUserId = normalizeUserId(userId);
+  const numericUserId = normalizeUserId(userId);
 
-    await pool.execute(
-        `
+  await pool.execute(
+    `
         INSERT INTO wallets (
             userId,
             balance,
@@ -52,11 +52,11 @@ async function getOrCreateWallet(userId) {
         ON DUPLICATE KEY UPDATE
             userId = VALUES(userId)
         `,
-        [numericUserId]
-    );
+    [numericUserId]
+  );
 
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT
             userId,
             balance,
@@ -66,21 +66,21 @@ async function getOrCreateWallet(userId) {
         WHERE userId = ?
         LIMIT 1
         `,
-        [numericUserId]
-    );
+    [numericUserId]
+  );
 
-    const wallet = rows[0];
+  const wallet = rows[0];
 
-    if (!wallet) {
-        throw new Error("Unable to retrieve wallet.");
-    }
+  if (!wallet) {
+    throw new Error('Unable to retrieve wallet.');
+  }
 
-    return {
-        ...wallet,
-        balance: Number(wallet.balance),
-        tripCredits: Number(wallet.tripCredits),
-        dayPassCredits: Number(wallet.dayPassCredits)
-    };
+  return {
+    ...wallet,
+    balance: Number(wallet.balance),
+    tripCredits: Number(wallet.tripCredits),
+    dayPassCredits: Number(wallet.dayPassCredits),
+  };
 }
 
 // =======================================
@@ -88,13 +88,13 @@ async function getOrCreateWallet(userId) {
 // =======================================
 
 async function getWalletDashboard(userId) {
-    const wallet = await getOrCreateWallet(userId);
-    const transactions = await getTransactionHistory(userId);
+  const wallet = await getOrCreateWallet(userId);
+  const transactions = await getTransactionHistory(userId);
 
-    return {
-        wallet,
-        transactions: transactions.slice(0, 5)
-    };
+  return {
+    wallet,
+    transactions: transactions.slice(0, 5),
+  };
 }
 
 // =======================================
@@ -102,20 +102,20 @@ async function getWalletDashboard(userId) {
 // =======================================
 
 async function topUpWallet(userId, amount) {
-    const numericUserId = normalizeUserId(userId);
-    const topUpAmount = Number(amount);
+  const numericUserId = normalizeUserId(userId);
+  const topUpAmount = Number(amount);
 
-    if (!Number.isFinite(topUpAmount) || topUpAmount <= 0) {
-        throw new Error("Top-up amount must be more than 0.");
-    }
+  if (!Number.isFinite(topUpAmount) || topUpAmount <= 0) {
+    throw new Error('Top-up amount must be more than 0.');
+  }
 
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             INSERT INTO wallets (
                 userId,
                 balance,
@@ -126,37 +126,35 @@ async function topUpWallet(userId, amount) {
             ON DUPLICATE KEY UPDATE
                 userId = VALUES(userId)
             `,
-            [numericUserId]
-        );
+      [numericUserId]
+    );
 
-        const [walletRows] = await connection.execute(
-            `
+    const [walletRows] = await connection.execute(
+      `
             SELECT
                 balance
             FROM wallets
             WHERE userId = ?
             FOR UPDATE
             `,
-            [numericUserId]
-        );
+      [numericUserId]
+    );
 
-        const currentBalance = Number(walletRows[0].balance);
+    const currentBalance = Number(walletRows[0].balance);
 
-        const balanceAfter = Number(
-            (currentBalance + topUpAmount).toFixed(2)
-        );
+    const balanceAfter = Number((currentBalance + topUpAmount).toFixed(2));
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE wallets
             SET balance = ?
             WHERE userId = ?
             `,
-            [balanceAfter, numericUserId]
-        );
+      [balanceAfter, numericUserId]
+    );
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             INSERT INTO wallet_transactions (
                 userId,
                 type,
@@ -167,24 +165,24 @@ async function topUpWallet(userId, amount) {
             )
             VALUES (?, ?, ?, ?, ?, NOW(3))
             `,
-            [
-                numericUserId,
-                "Top Up",
-                Number(topUpAmount.toFixed(2)),
-                balanceAfter,
-                "Success"
-            ]
-        );
+      [
+        numericUserId,
+        'Top Up',
+        Number(topUpAmount.toFixed(2)),
+        balanceAfter,
+        'Success',
+      ]
+    );
 
-        await connection.commit();
+    await connection.commit();
 
-        return balanceAfter;
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    return balanceAfter;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 // =======================================
@@ -192,20 +190,20 @@ async function topUpWallet(userId, amount) {
 // =======================================
 
 async function purchasePass(userId, passType) {
-    const numericUserId = normalizeUserId(userId);
-    const selectedPass = PASS_PRICES[passType];
+  const numericUserId = normalizeUserId(userId);
+  const selectedPass = PASS_PRICES[passType];
 
-    if (!selectedPass) {
-        throw new Error("Please choose a valid pass.");
-    }
+  if (!selectedPass) {
+    throw new Error('Please choose a valid pass.');
+  }
 
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             INSERT INTO wallets (
                 userId,
                 balance,
@@ -216,11 +214,11 @@ async function purchasePass(userId, passType) {
             ON DUPLICATE KEY UPDATE
                 userId = VALUES(userId)
             `,
-            [numericUserId]
-        );
+      [numericUserId]
+    );
 
-        const [walletRows] = await connection.execute(
-            `
+    const [walletRows] = await connection.execute(
+      `
             SELECT
                 balance,
                 tripCredits,
@@ -229,18 +227,18 @@ async function purchasePass(userId, passType) {
             WHERE userId = ?
             FOR UPDATE
             `,
-            [numericUserId]
-        );
+      [numericUserId]
+    );
 
-        const wallet = walletRows[0];
+    const wallet = walletRows[0];
 
-        const currentBalance = Number(wallet.balance);
-        let tripCredits = Number(wallet.tripCredits);
-        let dayPassCredits = Number(wallet.dayPassCredits);
+    const currentBalance = Number(wallet.balance);
+    let tripCredits = Number(wallet.tripCredits);
+    let dayPassCredits = Number(wallet.dayPassCredits);
 
-        if (currentBalance < selectedPass.price) {
-            await connection.execute(
-                `
+    if (currentBalance < selectedPass.price) {
+      await connection.execute(
+        `
                 INSERT INTO wallet_transactions (
                     userId,
                     type,
@@ -251,36 +249,36 @@ async function purchasePass(userId, passType) {
                 )
                 VALUES (?, ?, ?, ?, ?, NOW(3))
                 `,
-                [
-                    numericUserId,
-                    selectedPass.transactionType,
-                    selectedPass.price,
-                    currentBalance,
-                    "Failed"
-                ]
-            );
+        [
+          numericUserId,
+          selectedPass.transactionType,
+          selectedPass.price,
+          currentBalance,
+          'Failed',
+        ]
+      );
 
-            await connection.commit();
+      await connection.commit();
 
-            throw new InsufficientBalanceError(
-                "Insufficient wallet balance. Please top up credits first."
-            );
-        }
+      throw new InsufficientBalanceError(
+        'Insufficient wallet balance. Please top up credits first.'
+      );
+    }
 
-        const balanceAfter = Number(
-            (currentBalance - selectedPass.price).toFixed(2)
-        );
+    const balanceAfter = Number(
+      (currentBalance - selectedPass.price).toFixed(2)
+    );
 
-        if (passType === "two_way_trip") {
-            tripCredits += selectedPass.credits;
-        }
+    if (passType === 'two_way_trip') {
+      tripCredits += selectedPass.credits;
+    }
 
-        if (passType === "day_pass") {
-            dayPassCredits += selectedPass.credits;
-        }
+    if (passType === 'day_pass') {
+      dayPassCredits += selectedPass.credits;
+    }
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE wallets
             SET
                 balance = ?,
@@ -288,16 +286,11 @@ async function purchasePass(userId, passType) {
                 dayPassCredits = ?
             WHERE userId = ?
             `,
-            [
-                balanceAfter,
-                tripCredits,
-                dayPassCredits,
-                numericUserId
-            ]
-        );
+      [balanceAfter, tripCredits, dayPassCredits, numericUserId]
+    );
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             INSERT INTO wallet_transactions (
                 userId,
                 type,
@@ -308,34 +301,34 @@ async function purchasePass(userId, passType) {
             )
             VALUES (?, ?, ?, ?, ?, NOW(3))
             `,
-            [
-                numericUserId,
-                selectedPass.transactionType,
-                selectedPass.price,
-                balanceAfter,
-                "Success"
-            ]
-        );
+      [
+        numericUserId,
+        selectedPass.transactionType,
+        selectedPass.price,
+        balanceAfter,
+        'Success',
+      ]
+    );
 
-        await connection.commit();
+    await connection.commit();
 
-        return {
-            pass: selectedPass,
-            balanceAfter
-        };
-    } catch (error) {
-        if (
-            error instanceof InsufficientBalanceError ||
-            error.name === "InsufficientBalanceError"
-        ) {
-            throw error;
-        }
-
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
+    return {
+      pass: selectedPass,
+      balanceAfter,
+    };
+  } catch (error) {
+    if (
+      error instanceof InsufficientBalanceError ||
+      error.name === 'InsufficientBalanceError'
+    ) {
+      throw error;
     }
+
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 // =======================================
@@ -343,10 +336,10 @@ async function purchasePass(userId, passType) {
 // =======================================
 
 async function getTransactionHistory(userId) {
-    const numericUserId = normalizeUserId(userId);
+  const numericUserId = normalizeUserId(userId);
 
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT
             transactionId,
             userId,
@@ -359,22 +352,22 @@ async function getTransactionHistory(userId) {
         WHERE userId = ?
         ORDER BY timestamp DESC, transactionId DESC
         `,
-        [numericUserId]
-    );
+    [numericUserId]
+  );
 
-    return rows.map((transaction) => ({
-        ...transaction,
-        amount: Number(transaction.amount),
-        balanceAfter: Number(transaction.balanceAfter)
-    }));
+  return rows.map((transaction) => ({
+    ...transaction,
+    amount: Number(transaction.amount),
+    balanceAfter: Number(transaction.balanceAfter),
+  }));
 }
 
 module.exports = {
-    PASS_PRICES,
-    InsufficientBalanceError,
-    getWalletDashboard,
-    getOrCreateWallet,
-    topUpWallet,
-    purchasePass,
-    getTransactionHistory
+  PASS_PRICES,
+  InsufficientBalanceError,
+  getWalletDashboard,
+  getOrCreateWallet,
+  topUpWallet,
+  purchasePass,
+  getTransactionHistory,
 };

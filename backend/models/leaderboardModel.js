@@ -1,22 +1,22 @@
-const pool = require("../config/database");
-const trackerModel = require("./trackerModel");
+const pool = require('../config/database');
+const trackerModel = require('./trackerModel');
 
 function normalizeEntry(entry) {
-    return {
-        ...entry,
-        userId: Number(entry.userId),
-        userName: entry.userName || "Unknown Rider",
-        bikeName: entry.bikeName || "Unknown Bike",
-        city: entry.city || "Your City",
-        distance: Number(entry.distance) || 0,
-        rides: Number(entry.rides) || 0,
-        lastRideAt: entry.lastRideAt || null
-    };
+  return {
+    ...entry,
+    userId: Number(entry.userId),
+    userName: entry.userName || 'Unknown Rider',
+    bikeName: entry.bikeName || 'Unknown Bike',
+    city: entry.city || 'Your City',
+    distance: Number(entry.distance) || 0,
+    rides: Number(entry.rides) || 0,
+    lastRideAt: entry.lastRideAt || null,
+  };
 }
 
 async function getLatestBikeName(userId) {
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT bikeName
         FROM rentals
         WHERE userId = ?
@@ -24,14 +24,14 @@ async function getLatestBikeName(userId) {
         ORDER BY COALESCE(returnedAt, rentedAt) DESC
         LIMIT 1
         `,
-        [userId]
-    );
+    [userId]
+  );
 
-    return rows[0]?.bikeName || null;
+  return rows[0]?.bikeName || null;
 }
 
 async function refreshLeaderboard() {
-    const [trackerEntries] = await pool.execute(`
+  const [trackerEntries] = await pool.execute(`
         SELECT
             userId,
             userName,
@@ -43,14 +43,14 @@ async function refreshLeaderboard() {
         FROM tracker
     `);
 
-    for (const trackerEntry of trackerEntries) {
-        const latestBike =
-            trackerEntry.bikeName ||
-            (await getLatestBikeName(trackerEntry.userId)) ||
-            "Unknown Bike";
+  for (const trackerEntry of trackerEntries) {
+    const latestBike =
+      trackerEntry.bikeName ||
+      (await getLatestBikeName(trackerEntry.userId)) ||
+      'Unknown Bike';
 
-        await pool.execute(
-            `
+    await pool.execute(
+      `
             INSERT INTO leaderboard (
                 userId,
                 userName,
@@ -69,19 +69,19 @@ async function refreshLeaderboard() {
                 rides = VALUES(rides),
                 lastRideAt = VALUES(lastRideAt)
             `,
-            [
-                trackerEntry.userId,
-                trackerEntry.userName || "Unknown Rider",
-                trackerEntry.city || "Your City",
-                latestBike,
-                Number(trackerEntry.distance) || 0,
-                Number(trackerEntry.rides) || 0,
-                trackerEntry.lastRideAt || null
-            ]
-        );
-    }
+      [
+        trackerEntry.userId,
+        trackerEntry.userName || 'Unknown Rider',
+        trackerEntry.city || 'Your City',
+        latestBike,
+        Number(trackerEntry.distance) || 0,
+        Number(trackerEntry.rides) || 0,
+        trackerEntry.lastRideAt || null,
+      ]
+    );
+  }
 
-    const [rows] = await pool.execute(`
+  const [rows] = await pool.execute(`
         SELECT
             userId,
             userName,
@@ -94,48 +94,46 @@ async function refreshLeaderboard() {
         ORDER BY distance DESC, rides DESC
     `);
 
-    return rows.map(normalizeEntry);
+  return rows.map(normalizeEntry);
 }
 
 async function getLeaderboard(user) {
-    const leaderboardEntries = await refreshLeaderboard();
+  const leaderboardEntries = await refreshLeaderboard();
 
-    const global = [...leaderboardEntries].sort(
-        (a, b) => b.distance - a.distance
-    );
+  const global = [...leaderboardEntries].sort(
+    (a, b) => b.distance - a.distance
+  );
 
-    let friends = global.filter(
-        (entry) =>
-            entry.userId === Number(user.id) ||
-            entry.userName === user.name
-    );
+  let friends = global.filter(
+    (entry) => entry.userId === Number(user.id) || entry.userName === user.name
+  );
 
-    if (friends.length === 0) {
-        const tracker = await trackerModel.getTrackerByUser(user.id);
+  if (friends.length === 0) {
+    const tracker = await trackerModel.getTrackerByUser(user.id);
 
-        friends = [
-            {
-                userId: Number(user.id),
-                userName: user.name,
-                city: tracker?.city || "Your City",
-                bikeName:
-                    tracker?.bikeName ||
-                    (await getLatestBikeName(user.id)) ||
-                    "Unknown Bike",
-                distance: Number(tracker?.distance) || 0,
-                rides: Number(tracker?.rides) || 0,
-                lastRideAt: tracker?.lastRideAt || null
-            }
-        ];
-    }
+    friends = [
+      {
+        userId: Number(user.id),
+        userName: user.name,
+        city: tracker?.city || 'Your City',
+        bikeName:
+          tracker?.bikeName ||
+          (await getLatestBikeName(user.id)) ||
+          'Unknown Bike',
+        distance: Number(tracker?.distance) || 0,
+        rides: Number(tracker?.rides) || 0,
+        lastRideAt: tracker?.lastRideAt || null,
+      },
+    ];
+  }
 
-    return {
-        global,
-        friends
-    };
+  return {
+    global,
+    friends,
+  };
 }
 
 module.exports = {
-    getLeaderboard,
-    refreshLeaderboard
+  getLeaderboard,
+  refreshLeaderboard,
 };

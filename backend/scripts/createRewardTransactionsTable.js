@@ -1,8 +1,8 @@
-const pool = require("../config/database");
+const pool = require('../config/database');
 
 async function createRewardTransactionsTable() {
-    try {
-        await pool.execute(`
+  try {
+    await pool.execute(`
             CREATE TABLE IF NOT EXISTS reward_transactions (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 userId INT NOT NULL,
@@ -17,17 +17,14 @@ async function createRewardTransactionsTable() {
             )
         `);
 
-        console.log("reward_transactions table is ready.");
-    } catch (error) {
-        console.error(
-            "Unable to create reward_transactions table:",
-            error.message
-        );
+    console.log('reward_transactions table is ready.');
+  } catch (error) {
+    console.error('Unable to create reward_transactions table:', error.message);
 
-        process.exitCode = 1;
-    } finally {
-        await pool.end();
-    }
+    process.exitCode = 1;
+  } finally {
+    await pool.end();
+  }
 }
 
 createRewardTransactionsTable();

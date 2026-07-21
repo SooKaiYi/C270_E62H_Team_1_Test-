@@ -1,236 +1,179 @@
 <%- include('../partials/header') %>
 
-<link rel="stylesheet" href="/styles/wallet.css">
+<link rel="stylesheet" href="/styles/wallet.css" />
 
 <div class="wallet-shell admin-wallet-shell">
-
-    <section class="content-panel mb-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <div class="hero-eyebrow">Administrator Access</div>
-                <h1 class="panel-title mb-2">
-                    Wallet Administration
-                </h1>
-
-                <p class="text-muted mb-0">
-                    Manage member wallets, review transactions and
-                    monitor wallet statistics.
-                </p>
-            </div>
-
-            <a href="/wallet" class="btn btn-outline-primary">
-                Back to Wallet
-            </a>
-        </div>
-    </section>
-
-    <section class="action-grid mb-4">
-        <a class="action-card" href="#manage-wallets">
-            <div class="action-icon">👥</div>
-            <span class="fw-bold fs-5">Manage Wallets</span>
-            <small>
-                View every member’s current wallet balance.
-            </small>
-        </a>
-
-        <a class="action-card" href="#all-transactions">
-            <div class="action-icon">📋</div>
-            <span class="fw-bold fs-5">
-                View All Transactions
-            </span>
-            <small>
-                Monitor top-ups and spending from all members.
-            </small>
-        </a>
-
-        <a class="action-card" href="#wallet-statistics">
-            <div class="action-icon">📊</div>
-            <span class="fw-bold fs-5">
-                Wallet Statistics
-            </span>
-            <small>
-                Review balances, spending and transaction totals.
-            </small>
-        </a>
-    </section>
-
-    <section
-        class="stats-grid mb-4"
-        id="wallet-statistics"
+  <section class="content-panel mb-4">
+    <div
+      class="d-flex justify-content-between align-items-center flex-wrap gap-3"
     >
-        <div class="stat-card">
-            <span>Total Members</span>
-            <strong><%= statistics.totalMembers %></strong>
-        </div>
+      <div>
+        <div class="hero-eyebrow">Administrator Access</div>
+        <h1 class="panel-title mb-2">Wallet Administration</h1>
 
-        <div class="stat-card">
-            <span>Total Wallet Balance</span>
-            <strong>
-                <%= formatCurrency(
-                    statistics.totalWalletBalance
-                ) %>
-            </strong>
-        </div>
+        <p class="text-muted mb-0">
+          Manage member wallets, review transactions and monitor wallet
+          statistics.
+        </p>
+      </div>
 
-        <div class="stat-card">
-            <span>Total Transactions</span>
-            <strong>
-                <%= statistics.totalTransactions %>
-            </strong>
-        </div>
+      <a href="/wallet" class="btn btn-outline-primary"> Back to Wallet </a>
+    </div>
+  </section>
 
-        <div class="stat-card">
-            <span>Total Top Ups</span>
-            <strong>
-                <%= formatCurrency(statistics.totalTopUps) %>
-            </strong>
-        </div>
+  <section class="action-grid mb-4">
+    <a class="action-card" href="#manage-wallets">
+      <div class="action-icon">👥</div>
+      <span class="fw-bold fs-5">Manage Wallets</span>
+      <small> View every member’s current wallet balance. </small>
+    </a>
 
-        <div class="stat-card">
-            <span>Total Spending</span>
-            <strong>
-                <%= formatCurrency(statistics.totalSpending) %>
-            </strong>
-        </div>
-    </section>
+    <a class="action-card" href="#all-transactions">
+      <div class="action-icon">📋</div>
+      <span class="fw-bold fs-5"> View All Transactions </span>
+      <small> Monitor top-ups and spending from all members. </small>
+    </a>
 
-    <section class="content-panel mb-4" id="manage-wallets">
-        <h2 class="h4 panel-title mb-3">
-            👥 Manage Wallets
-        </h2>
+    <a class="action-card" href="#wallet-statistics">
+      <div class="action-icon">📊</div>
+      <span class="fw-bold fs-5"> Wallet Statistics </span>
+      <small> Review balances, spending and transaction totals. </small>
+    </a>
+  </section>
 
-        <% if (wallets.length === 0) { %>
-            <p class="text-muted mb-0">
-                No member wallets are available.
-            </p>
-        <% } else { %>
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>User ID</th>
-                            <th>Member</th>
-                            <th>Email</th>
-                            <th>Balance</th>
-                            <th>Transactions</th>
-                        </tr>
-                    </thead>
+  <section class="stats-grid mb-4" id="wallet-statistics">
+    <div class="stat-card">
+      <span>Total Members</span>
+      <strong><%= statistics.totalMembers %></strong>
+    </div>
 
-                    <tbody>
-                        <% wallets.forEach((wallet) => { %>
-                            <tr>
-                                <td><%= wallet.userId %></td>
-                                <td class="fw-semibold">
-                                    <%= wallet.name %>
-                                </td>
-                                <td><%= wallet.email %></td>
-                                <td class="fw-bold">
-                                    <%= formatCurrency(
-                                        wallet.balance
-                                    ) %>
-                                </td>
-                                <td>
-                                    <span class="badge text-bg-primary">
-                                        <%= wallet.transactionCount %>
-                                    </span>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        <% } %>
-    </section>
+    <div class="stat-card">
+      <span>Total Wallet Balance</span>
+      <strong> <%= formatCurrency( statistics.totalWalletBalance ) %> </strong>
+    </div>
 
-    <section
-        class="content-panel"
-        id="all-transactions"
-    >
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h4 panel-title mb-0">
-                📋 All Wallet Transactions
-            </h2>
+    <div class="stat-card">
+      <span>Total Transactions</span>
+      <strong> <%= statistics.totalTransactions %> </strong>
+    </div>
 
-            <small class="text-muted">
-                Automatically refreshes every 10 seconds
-            </small>
-        </div>
+    <div class="stat-card">
+      <span>Total Top Ups</span>
+      <strong> <%= formatCurrency(statistics.totalTopUps) %> </strong>
+    </div>
 
-        <% if (transactions.length === 0) { %>
-            <p class="text-muted mb-0">
-                No wallet transactions found.
-            </p>
-        <% } else { %>
-            <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Member</th>
-                            <th>Email</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th>Balance After</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
+    <div class="stat-card">
+      <span>Total Spending</span>
+      <strong> <%= formatCurrency(statistics.totalSpending) %> </strong>
+    </div>
+  </section>
 
-                    <tbody>
-                        <% transactions.forEach((transaction) => { %>
-                            <tr>
-                                <td class="fw-semibold">
-                                    <%= transaction.userName %>
-                                </td>
+  <section class="content-panel mb-4" id="manage-wallets">
+    <h2 class="h4 panel-title mb-3">👥 Manage Wallets</h2>
 
-                                <td>
-                                    <%= transaction.userEmail %>
-                                </td>
+    <% if (wallets.length === 0) { %>
+    <p class="text-muted mb-0">No member wallets are available.</p>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>User ID</th>
+            <th>Member</th>
+            <th>Email</th>
+            <th>Balance</th>
+            <th>Transactions</th>
+          </tr>
+        </thead>
 
-                                <td>
-                                    <%= transaction.type %>
-                                </td>
+        <tbody>
+          <% wallets.forEach((wallet) => { %>
+          <tr>
+            <td><%= wallet.userId %></td>
+            <td class="fw-semibold"><%= wallet.name %></td>
+            <td><%= wallet.email %></td>
+            <td class="fw-bold"><%= formatCurrency( wallet.balance ) %></td>
+            <td>
+              <span class="badge text-bg-primary">
+                <%= wallet.transactionCount %>
+              </span>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
 
-                                <td>
-                                    <%= transactionSign(
-                                        transaction.type
-                                    ) %><%= formatCurrency(
-                                        transaction.amount
-                                    ) %>
-                                </td>
+  <section class="content-panel" id="all-transactions">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="h4 panel-title mb-0">📋 All Wallet Transactions</h2>
 
-                                <td>
-                                    <%= formatCurrency(
-                                        transaction.balanceAfter
-                                    ) %>
-                                </td>
+      <small class="text-muted">
+        Automatically refreshes every 10 seconds
+      </small>
+    </div>
 
-                                <td>
-                                    <span class="badge <%= transaction.status === 'Success' ? 'text-bg-success' : 'text-bg-danger' %>">
-                                        <%= transaction.status %>
-                                    </span>
-                                </td>
+    <% if (transactions.length === 0) { %>
+    <p class="text-muted mb-0">No wallet transactions found.</p>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Member</th>
+            <th>Email</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Balance After</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
 
-                                <td>
-                                    <%= formatDateTime(
-                                        transaction.timestamp ||
-                                        transaction.date
-                                    ) %>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-            </div>
-        <% } %>
-    </section>
+        <tbody>
+          <% transactions.forEach((transaction) => { %>
+          <tr>
+            <td class="fw-semibold"><%= transaction.userName %></td>
+
+            <td><%= transaction.userEmail %></td>
+
+            <td><%= transaction.type %></td>
+
+            <td>
+              <%= transactionSign( transaction.type ) %><%= formatCurrency(
+              transaction.amount ) %>
+            </td>
+
+            <td><%= formatCurrency( transaction.balanceAfter ) %></td>
+
+            <td>
+              <span
+                class="badge <%= transaction.status === 'Success' ? 'text-bg-success' : 'text-bg-danger' %>"
+              >
+                <%= transaction.status %>
+              </span>
+            </td>
+
+            <td>
+              <%= formatDateTime( transaction.timestamp || transaction.date ) %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
 </div>
 
 <script>
-    // Refresh admin information so new member transactions
-    // become visible without restarting the server.
-    setTimeout(() => {
-        window.location.reload();
-    }, 10000);
+  // Refresh admin information so new member transactions
+  // become visible without restarting the server.
+  setTimeout(() => {
+    window.location.reload();
+  }, 10000);
 </script>
 
 <%- include('../partials/footer') %>

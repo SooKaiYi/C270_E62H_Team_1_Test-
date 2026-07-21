@@ -1,63 +1,57 @@
-const fs = require("fs");
-const path = require("path");
-const pool = require("../config/database");
+const fs = require('fs');
+const path = require('path');
+const pool = require('../config/database');
 
-const dataDirectory = path.join(__dirname, "..", "data");
-const schemaPath = path.join(
-    __dirname,
-    "..",
-    "database",
-    "schema.sql"
-);
+const dataDirectory = path.join(__dirname, '..', 'data');
+const schemaPath = path.join(__dirname, '..', 'database', 'schema.sql');
 
 function readJson(filename) {
-    const filePath = path.join(dataDirectory, filename);
+  const filePath = path.join(dataDirectory, filename);
 
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
-    }
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File not found: ${filePath}`);
+  }
 
-    const rawData = fs.readFileSync(filePath, "utf8")
-        .replace(/^\uFEFF/, "");
+  const rawData = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '');
 
-    return JSON.parse(rawData);
+  return JSON.parse(rawData);
 }
 
 function convertIsoDate(value) {
-    if (!value) {
-        return null;
-    }
+  if (!value) {
+    return null;
+  }
 
-    const date = new Date(value);
+  const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
-        throw new Error(`Invalid date value: ${value}`);
-    }
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`Invalid date value: ${value}`);
+  }
 
-    return date;
+  return date;
 }
 
 async function createTables(connection) {
-    const schema = fs.readFileSync(schemaPath, "utf8");
+  const schema = fs.readFileSync(schemaPath, 'utf8');
 
-    const statements = schema
-        .split(";")
-        .map((statement) => statement.trim())
-        .filter(Boolean);
+  const statements = schema
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean);
 
-    for (const statement of statements) {
-        await connection.query(statement);
-    }
+  for (const statement of statements) {
+    await connection.query(statement);
+  }
 
-    console.log("Database tables created.");
+  console.log('Database tables created.');
 }
 
 async function importUsers(connection) {
-    const users = readJson("user.json");
+  const users = readJson('user.json');
 
-    for (const user of users) {
-        await connection.execute(
-            `
+  for (const user of users) {
+    await connection.execute(
+      `
             INSERT INTO users (
                 id,
                 email,
@@ -72,25 +66,19 @@ async function importUsers(connection) {
                 name = VALUES(name),
                 role = VALUES(role)
             `,
-            [
-                user.id,
-                user.email,
-                user.password,
-                user.name,
-                user.role
-            ]
-        );
-    }
+      [user.id, user.email, user.password, user.name, user.role]
+    );
+  }
 
-    console.log(`${users.length} users imported.`);
+  console.log(`${users.length} users imported.`);
 }
 
 async function importBikes(connection) {
-    const bikes = readJson("bikes.json");
+  const bikes = readJson('bikes.json');
 
-    for (const bike of bikes) {
-        await connection.execute(
-            `
+  for (const bike of bikes) {
+    await connection.execute(
+      `
             INSERT INTO bikes (
                 id,
                 name,
@@ -107,28 +95,26 @@ async function importBikes(connection) {
                 status = VALUES(status),
                 image = VALUES(image)
             `,
-            [
-                bike.id,
-                bike.name,
-                bike.description,
-                bike.price,
-                bike.status,
-                bike.image
-            ]
-        );
-    }
+      [
+        bike.id,
+        bike.name,
+        bike.description,
+        bike.price,
+        bike.status,
+        bike.image,
+      ]
+    );
+  }
 
-    console.log(`${bikes.length} bikes imported.`);
+  console.log(`${bikes.length} bikes imported.`);
 }
 
 async function importBikeStations(connection) {
-    const stations = require(
-        path.join(dataDirectory, "bikeStations.js")
-    );
+  const stations = require(path.join(dataDirectory, 'bikeStations.js'));
 
-    for (const station of stations) {
-        await connection.execute(
-            `
+  for (const station of stations) {
+    await connection.execute(
+      `
             INSERT INTO bike_stations (
                 name,
                 latitude,
@@ -139,23 +125,19 @@ async function importBikeStations(connection) {
                 latitude = VALUES(latitude),
                 longitude = VALUES(longitude)
             `,
-            [
-                station.name,
-                station.lat,
-                station.lng
-            ]
-        );
-    }
+      [station.name, station.lat, station.lng]
+    );
+  }
 
-    console.log(`${stations.length} bike stations imported.`);
+  console.log(`${stations.length} bike stations imported.`);
 }
 
 async function importRentals(connection) {
-    const rentals = readJson("rentals.json");
+  const rentals = readJson('rentals.json');
 
-    for (const rental of rentals) {
-        await connection.execute(
-            `
+  for (const rental of rentals) {
+    await connection.execute(
+      `
             INSERT INTO rentals (
                 id,
                 userId,
@@ -178,29 +160,29 @@ async function importRentals(connection) {
                 rentedAt = VALUES(rentedAt),
                 returnedAt = VALUES(returnedAt)
             `,
-            [
-                rental.id,
-                rental.userId,
-                rental.userName,
-                rental.bikeId,
-                rental.bikeName,
-                rental.amount,
-                rental.status,
-                convertIsoDate(rental.rentedAt),
-                convertIsoDate(rental.returnedAt)
-            ]
-        );
-    }
+      [
+        rental.id,
+        rental.userId,
+        rental.userName,
+        rental.bikeId,
+        rental.bikeName,
+        rental.amount,
+        rental.status,
+        convertIsoDate(rental.rentedAt),
+        convertIsoDate(rental.returnedAt),
+      ]
+    );
+  }
 
-    console.log(`${rentals.length} rentals imported.`);
+  console.log(`${rentals.length} rentals imported.`);
 }
 
 async function importWallets(connection) {
-    const wallets = readJson("wallets.json");
+  const wallets = readJson('wallets.json');
 
-    for (const wallet of wallets) {
-        await connection.execute(
-            `
+  for (const wallet of wallets) {
+    await connection.execute(
+      `
             INSERT INTO wallets (
                 userId,
                 balance,
@@ -213,26 +195,19 @@ async function importWallets(connection) {
                 tripCredits = VALUES(tripCredits),
                 dayPassCredits = VALUES(dayPassCredits)
             `,
-            [
-                wallet.userId,
-                wallet.balance,
-                wallet.tripCredits,
-                wallet.dayPassCredits
-            ]
-        );
-    }
+      [wallet.userId, wallet.balance, wallet.tripCredits, wallet.dayPassCredits]
+    );
+  }
 
-    console.log(`${wallets.length} wallets imported.`);
+  console.log(`${wallets.length} wallets imported.`);
 }
 
 async function importWalletTransactions(connection) {
-    const transactions = readJson(
-        "wallet_transactions.json"
-    );
+  const transactions = readJson('wallet_transactions.json');
 
-    for (const transaction of transactions) {
-        await connection.execute(
-            `
+  for (const transaction of transactions) {
+    await connection.execute(
+      `
             INSERT INTO wallet_transactions (
                 transactionId,
                 userId,
@@ -251,29 +226,27 @@ async function importWalletTransactions(connection) {
                 status = VALUES(status),
                 timestamp = VALUES(timestamp)
             `,
-            [
-                transaction.transactionId,
-                transaction.userId,
-                transaction.type,
-                transaction.amount,
-                transaction.balanceAfter,
-                transaction.status,
-                convertIsoDate(transaction.timestamp)
-            ]
-        );
-    }
-
-    console.log(
-        `${transactions.length} wallet transactions imported.`
+      [
+        transaction.transactionId,
+        transaction.userId,
+        transaction.type,
+        transaction.amount,
+        transaction.balanceAfter,
+        transaction.status,
+        convertIsoDate(transaction.timestamp),
+      ]
     );
+  }
+
+  console.log(`${transactions.length} wallet transactions imported.`);
 }
 
 async function importRewards(connection) {
-    const rewards = readJson("rewards.json");
+  const rewards = readJson('rewards.json');
 
-    for (const [userId, reward] of Object.entries(rewards)) {
-        await connection.execute(
-            `
+  for (const [userId, reward] of Object.entries(rewards)) {
+    await connection.execute(
+      `
             INSERT INTO rewards (
                 userId,
                 points,
@@ -294,30 +267,28 @@ async function importRewards(connection) {
                 friendsReferred = VALUES(friendsReferred),
                 referredBy = VALUES(referredBy)
             `,
-            [
-                Number(userId),
-                reward.points,
-                reward.freeHours,
-                reward.rides,
-                reward.totalMinutes,
-                reward.referralCode,
-                reward.friendsReferred,
-                reward.referredBy
-            ]
-        );
-    }
-
-    console.log(
-        `${Object.keys(rewards).length} reward records imported.`
+      [
+        Number(userId),
+        reward.points,
+        reward.freeHours,
+        reward.rides,
+        reward.totalMinutes,
+        reward.referralCode,
+        reward.friendsReferred,
+        reward.referredBy,
+      ]
     );
+  }
+
+  console.log(`${Object.keys(rewards).length} reward records imported.`);
 }
 
 async function importLeaderboard(connection) {
-    const leaderboard = readJson("leaderboard.json");
+  const leaderboard = readJson('leaderboard.json');
 
-    for (const record of leaderboard) {
-        await connection.execute(
-            `
+  for (const record of leaderboard) {
+    await connection.execute(
+      `
             INSERT INTO leaderboard (
                 userId,
                 userName,
@@ -336,29 +307,27 @@ async function importLeaderboard(connection) {
                 rides = VALUES(rides),
                 lastRideAt = VALUES(lastRideAt)
             `,
-            [
-                record.userId,
-                record.userName,
-                record.city,
-                record.bikeName,
-                record.distance,
-                record.rides,
-                convertIsoDate(record.lastRideAt)
-            ]
-        );
-    }
-
-    console.log(
-        `${leaderboard.length} leaderboard records imported.`
+      [
+        record.userId,
+        record.userName,
+        record.city,
+        record.bikeName,
+        record.distance,
+        record.rides,
+        convertIsoDate(record.lastRideAt),
+      ]
     );
+  }
+
+  console.log(`${leaderboard.length} leaderboard records imported.`);
 }
 
 async function importTracker(connection) {
-    const tracker = readJson("tracker.json");
+  const tracker = readJson('tracker.json');
 
-    for (const record of tracker) {
-        await connection.execute(
-            `
+  for (const record of tracker) {
+    await connection.execute(
+      `
             INSERT INTO tracker (
                 userId,
                 userName,
@@ -377,27 +346,27 @@ async function importTracker(connection) {
                 rides = VALUES(rides),
                 lastRideAt = VALUES(lastRideAt)
             `,
-            [
-                record.userId,
-                record.userName,
-                record.city,
-                record.bikeName,
-                record.distance,
-                record.rides,
-                convertIsoDate(record.lastRideAt)
-            ]
-        );
-    }
+      [
+        record.userId,
+        record.userName,
+        record.city,
+        record.bikeName,
+        record.distance,
+        record.rides,
+        convertIsoDate(record.lastRideAt),
+      ]
+    );
+  }
 
-    console.log(`${tracker.length} tracker records imported.`);
+  console.log(`${tracker.length} tracker records imported.`);
 }
 
 async function importBikeRepairReports(connection) {
-    const reports = readJson("bikeRepairReports.json");
+  const reports = readJson('bikeRepairReports.json');
 
-    for (const report of reports) {
-        await connection.execute(
-            `
+  for (const report of reports) {
+    await connection.execute(
+      `
             INSERT INTO bike_repair_reports (
                 id,
                 bikeStation,
@@ -416,34 +385,32 @@ async function importBikeRepairReports(connection) {
                 status = VALUES(status),
                 reportDate = VALUES(reportDate)
             `,
-            [
-                report.id,
-                report.bikeStation,
-                report.bikeID,
-                report.issueType,
-                report.description,
-                report.status,
-                report.date
-            ]
-        );
-    }
-
-    console.log(
-        `${reports.length} bike repair reports imported.`
+      [
+        report.id,
+        report.bikeStation,
+        report.bikeID,
+        report.issueType,
+        report.description,
+        report.status,
+        report.date,
+      ]
     );
+  }
+
+  console.log(`${reports.length} bike repair reports imported.`);
 }
 
 async function importTransactions(connection) {
-    const transactions = readJson("transactions.json");
+  const transactions = readJson('transactions.json');
 
-    if (transactions.length === 0) {
-        console.log("transactions.json is empty. Nothing imported.");
-        return;
-    }
+  if (transactions.length === 0) {
+    console.log('transactions.json is empty. Nothing imported.');
+    return;
+  }
 
-    for (const transaction of transactions) {
-        await connection.execute(
-            `
+  for (const transaction of transactions) {
+    await connection.execute(
+      `
             INSERT INTO transactions (
                 id,
                 userId,
@@ -460,59 +427,57 @@ async function importTransactions(connection) {
                 status = VALUES(status),
                 createdAt = VALUES(createdAt)
             `,
-            [
-                transaction.id,
-                transaction.userId ?? null,
-                transaction.type ?? null,
-                transaction.amount ?? null,
-                transaction.status ?? null,
-                transaction.createdAt
-                    ? convertIsoDate(transaction.createdAt)
-                    : new Date()
-            ]
-        );
-    }
-
-    console.log(
-        `${transactions.length} transaction records imported.`
+      [
+        transaction.id,
+        transaction.userId ?? null,
+        transaction.type ?? null,
+        transaction.amount ?? null,
+        transaction.status ?? null,
+        transaction.createdAt
+          ? convertIsoDate(transaction.createdAt)
+          : new Date(),
+      ]
     );
+  }
+
+  console.log(`${transactions.length} transaction records imported.`);
 }
 
 async function runImport() {
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        console.log("Starting MySQL import...");
+  try {
+    console.log('Starting MySQL import...');
 
-        await createTables(connection);
-        await connection.beginTransaction();
+    await createTables(connection);
+    await connection.beginTransaction();
 
-        await importUsers(connection);
-        await importBikes(connection);
-        await importBikeStations(connection);
-        await importRentals(connection);
-        await importWallets(connection);
-        await importWalletTransactions(connection);
-        await importRewards(connection);
-        await importLeaderboard(connection);
-        await importTracker(connection);
-        await importBikeRepairReports(connection);
-        await importTransactions(connection);
+    await importUsers(connection);
+    await importBikes(connection);
+    await importBikeStations(connection);
+    await importRentals(connection);
+    await importWallets(connection);
+    await importWalletTransactions(connection);
+    await importRewards(connection);
+    await importLeaderboard(connection);
+    await importTracker(connection);
+    await importBikeRepairReports(connection);
+    await importTransactions(connection);
 
-        await connection.commit();
+    await connection.commit();
 
-        console.log("All JSON data imported successfully.");
-    } catch (error) {
-        await connection.rollback();
+    console.log('All JSON data imported successfully.');
+  } catch (error) {
+    await connection.rollback();
 
-        console.error("Import failed:");
-        console.error(error.message);
+    console.error('Import failed:');
+    console.error(error.message);
 
-        process.exitCode = 1;
-    } finally {
-        connection.release();
-        await pool.end();
-    }
+    process.exitCode = 1;
+  } finally {
+    connection.release();
+    await pool.end();
+  }
 }
 
 runImport();

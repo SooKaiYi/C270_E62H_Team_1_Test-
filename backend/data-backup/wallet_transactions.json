@@ -1,281 +1,281 @@
 [
-    {
-        "transactionId": 1,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 20,
-        "balanceAfter": 20,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:00:00.000Z"
-    },
-    {
-        "transactionId": 2,
-        "userId": 1,
-        "type": "Single Trip",
-        "amount": 2,
-        "balanceAfter": 18,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:56:45.911Z"
-    },
-    {
-        "transactionId": 3,
-        "userId": 1,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 8,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:56:50.914Z"
-    },
-    {
-        "transactionId": 4,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 20,
-        "balanceAfter": 28,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:56:56.814Z"
-    },
-    {
-        "transactionId": 5,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 10,
-        "balanceAfter": 38,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:57:03.341Z"
-    },
-    {
-        "transactionId": 6,
-        "userId": 1,
-        "type": "Single Trip",
-        "amount": 2,
-        "balanceAfter": 36,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:57:13.012Z"
-    },
-    {
-        "transactionId": 7,
-        "userId": 1,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 26,
-        "status": "Success",
-        "timestamp": "2026-06-30T07:57:19.574Z"
-    },
-    {
-        "transactionId": 8,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 10,
-        "balanceAfter": 36,
-        "status": "Success",
-        "timestamp": "2026-07-06T07:36:21.473Z"
-    },
-    {
-        "transactionId": 9,
-        "userId": 1,
-        "type": "Single Trip",
-        "amount": 2,
-        "balanceAfter": 34,
-        "status": "Success",
-        "timestamp": "2026-07-06T07:36:26.146Z"
-    },
-    {
-        "transactionId": 10,
-        "userId": 1,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 24,
-        "status": "Success",
-        "timestamp": "2026-07-06T07:36:31.363Z"
-    },
-    {
-        "transactionId": 11,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 20,
-        "balanceAfter": 44,
-        "status": "Success",
-        "timestamp": "2026-07-07T15:17:22.679Z"
-    },
-    {
-        "transactionId": 12,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 50,
-        "balanceAfter": 94,
-        "status": "Success",
-        "timestamp": "2026-07-07T15:17:30.235Z"
-    },
-    {
-        "transactionId": 13,
-        "userId": 1,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 84,
-        "status": "Success",
-        "timestamp": "2026-07-07T15:17:56.152Z"
-    },
-    {
-        "transactionId": 14,
-        "userId": 1,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 74,
-        "status": "Success",
-        "timestamp": "2026-07-07T15:18:00.454Z"
-    },
-    {
-        "transactionId": 15,
-        "userId": 1,
-        "type": "Top Up",
-        "amount": 5,
-        "balanceAfter": 79,
-        "status": "Success",
-        "timestamp": "2026-07-10T08:37:33.096Z"
-    },
-    {
-        "transactionId": 16,
-        "userId": 2,
-        "type": "Single Trip",
-        "amount": 2,
-        "balanceAfter": 3,
-        "status": "Success",
-        "timestamp": "2026-07-10T12:29:30.569Z"
-    },
-    {
-        "transactionId": 17,
-        "userId": 2,
-        "type": "Single Trip",
-        "amount": 2,
-        "balanceAfter": 1,
-        "status": "Success",
-        "timestamp": "2026-07-10T13:11:36.766Z"
-    },
-    {
-        "transactionId": 18,
-        "userId": 2,
-        "type": "Top Up",
-        "amount": 10,
-        "balanceAfter": 11,
-        "status": "Success",
-        "timestamp": "2026-07-10T13:11:41.951Z"
-    },
-    {
-        "transactionId": 19,
-        "userId": 5,
-        "type": "Top Up",
-        "amount": 50,
-        "balanceAfter": 50,
-        "status": "Success",
-        "timestamp": "2026-07-11T08:06:29.160Z"
-    },
-    {
-        "transactionId": 20,
-        "userId": 1,
-        "type": "Bike Rental",
-        "amount": 8,
-        "balanceAfter": 71,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:37:44.160Z"
-    },
-    {
-        "transactionId": 21,
-        "userId": 5,
-        "type": "Bike Rental",
-        "amount": 8,
-        "balanceAfter": 42,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:39:50.588Z"
-    },
-    {
-        "transactionId": 22,
-        "userId": 5,
-        "type": "Day Pass",
-        "amount": 10,
-        "balanceAfter": 32,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:40:06.743Z"
-    },
-    {
-        "transactionId": 23,
-        "userId": 5,
-        "type": "Bike Rental",
-        "amount": 15,
-        "balanceAfter": 17,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:40:18.717Z"
-    },
-    {
-        "transactionId": 24,
-        "userId": 5,
-        "type": "Bike Rental",
-        "amount": 8,
-        "balanceAfter": 9,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:51:42.178Z"
-    },
-    {
-        "transactionId": 25,
-        "userId": 5,
-        "type": "Bike Rental",
-        "amount": 4,
-        "balanceAfter": 5,
-        "status": "Success",
-        "timestamp": "2026-07-12T09:55:30.391Z"
-    },
-    {
-        "transactionId": 26,
-        "userId": 5,
-        "type": "2 Way Trip",
-        "amount": 5,
-        "balanceAfter": 0,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:30:03.175Z"
-    },
-    {
-        "transactionId": 27,
-        "userId": 5,
-        "type": "Top Up",
-        "amount": 5,
-        "balanceAfter": 5,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:41:54.939Z"
-    },
-    {
-        "transactionId": 28,
-        "userId": 5,
-        "type": "2 Way Trip",
-        "amount": 5,
-        "balanceAfter": 0,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:42:00.338Z"
-    },
-    {
-        "transactionId": 29,
-        "userId": 5,
-        "type": "Top Up",
-        "amount": 5,
-        "balanceAfter": 5,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:42:53.653Z"
-    },
-    {
-        "transactionId": 30,
-        "userId": 5,
-        "type": "2 Way Trip",
-        "amount": 5,
-        "balanceAfter": 0,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:42:58.683Z"
-    },
-    {
-        "transactionId": 31,
-        "userId": 5,
-        "type": "2 Way Trip - Bike Rental",
-        "amount": 0,
-        "balanceAfter": 0,
-        "status": "Success",
-        "timestamp": "2026-07-12T10:43:03.369Z"
-    }
+  {
+    "transactionId": 1,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 20,
+    "balanceAfter": 20,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:00:00.000Z"
+  },
+  {
+    "transactionId": 2,
+    "userId": 1,
+    "type": "Single Trip",
+    "amount": 2,
+    "balanceAfter": 18,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:56:45.911Z"
+  },
+  {
+    "transactionId": 3,
+    "userId": 1,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 8,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:56:50.914Z"
+  },
+  {
+    "transactionId": 4,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 20,
+    "balanceAfter": 28,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:56:56.814Z"
+  },
+  {
+    "transactionId": 5,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 10,
+    "balanceAfter": 38,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:57:03.341Z"
+  },
+  {
+    "transactionId": 6,
+    "userId": 1,
+    "type": "Single Trip",
+    "amount": 2,
+    "balanceAfter": 36,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:57:13.012Z"
+  },
+  {
+    "transactionId": 7,
+    "userId": 1,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 26,
+    "status": "Success",
+    "timestamp": "2026-06-30T07:57:19.574Z"
+  },
+  {
+    "transactionId": 8,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 10,
+    "balanceAfter": 36,
+    "status": "Success",
+    "timestamp": "2026-07-06T07:36:21.473Z"
+  },
+  {
+    "transactionId": 9,
+    "userId": 1,
+    "type": "Single Trip",
+    "amount": 2,
+    "balanceAfter": 34,
+    "status": "Success",
+    "timestamp": "2026-07-06T07:36:26.146Z"
+  },
+  {
+    "transactionId": 10,
+    "userId": 1,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 24,
+    "status": "Success",
+    "timestamp": "2026-07-06T07:36:31.363Z"
+  },
+  {
+    "transactionId": 11,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 20,
+    "balanceAfter": 44,
+    "status": "Success",
+    "timestamp": "2026-07-07T15:17:22.679Z"
+  },
+  {
+    "transactionId": 12,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 50,
+    "balanceAfter": 94,
+    "status": "Success",
+    "timestamp": "2026-07-07T15:17:30.235Z"
+  },
+  {
+    "transactionId": 13,
+    "userId": 1,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 84,
+    "status": "Success",
+    "timestamp": "2026-07-07T15:17:56.152Z"
+  },
+  {
+    "transactionId": 14,
+    "userId": 1,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 74,
+    "status": "Success",
+    "timestamp": "2026-07-07T15:18:00.454Z"
+  },
+  {
+    "transactionId": 15,
+    "userId": 1,
+    "type": "Top Up",
+    "amount": 5,
+    "balanceAfter": 79,
+    "status": "Success",
+    "timestamp": "2026-07-10T08:37:33.096Z"
+  },
+  {
+    "transactionId": 16,
+    "userId": 2,
+    "type": "Single Trip",
+    "amount": 2,
+    "balanceAfter": 3,
+    "status": "Success",
+    "timestamp": "2026-07-10T12:29:30.569Z"
+  },
+  {
+    "transactionId": 17,
+    "userId": 2,
+    "type": "Single Trip",
+    "amount": 2,
+    "balanceAfter": 1,
+    "status": "Success",
+    "timestamp": "2026-07-10T13:11:36.766Z"
+  },
+  {
+    "transactionId": 18,
+    "userId": 2,
+    "type": "Top Up",
+    "amount": 10,
+    "balanceAfter": 11,
+    "status": "Success",
+    "timestamp": "2026-07-10T13:11:41.951Z"
+  },
+  {
+    "transactionId": 19,
+    "userId": 5,
+    "type": "Top Up",
+    "amount": 50,
+    "balanceAfter": 50,
+    "status": "Success",
+    "timestamp": "2026-07-11T08:06:29.160Z"
+  },
+  {
+    "transactionId": 20,
+    "userId": 1,
+    "type": "Bike Rental",
+    "amount": 8,
+    "balanceAfter": 71,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:37:44.160Z"
+  },
+  {
+    "transactionId": 21,
+    "userId": 5,
+    "type": "Bike Rental",
+    "amount": 8,
+    "balanceAfter": 42,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:39:50.588Z"
+  },
+  {
+    "transactionId": 22,
+    "userId": 5,
+    "type": "Day Pass",
+    "amount": 10,
+    "balanceAfter": 32,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:40:06.743Z"
+  },
+  {
+    "transactionId": 23,
+    "userId": 5,
+    "type": "Bike Rental",
+    "amount": 15,
+    "balanceAfter": 17,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:40:18.717Z"
+  },
+  {
+    "transactionId": 24,
+    "userId": 5,
+    "type": "Bike Rental",
+    "amount": 8,
+    "balanceAfter": 9,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:51:42.178Z"
+  },
+  {
+    "transactionId": 25,
+    "userId": 5,
+    "type": "Bike Rental",
+    "amount": 4,
+    "balanceAfter": 5,
+    "status": "Success",
+    "timestamp": "2026-07-12T09:55:30.391Z"
+  },
+  {
+    "transactionId": 26,
+    "userId": 5,
+    "type": "2 Way Trip",
+    "amount": 5,
+    "balanceAfter": 0,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:30:03.175Z"
+  },
+  {
+    "transactionId": 27,
+    "userId": 5,
+    "type": "Top Up",
+    "amount": 5,
+    "balanceAfter": 5,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:41:54.939Z"
+  },
+  {
+    "transactionId": 28,
+    "userId": 5,
+    "type": "2 Way Trip",
+    "amount": 5,
+    "balanceAfter": 0,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:42:00.338Z"
+  },
+  {
+    "transactionId": 29,
+    "userId": 5,
+    "type": "Top Up",
+    "amount": 5,
+    "balanceAfter": 5,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:42:53.653Z"
+  },
+  {
+    "transactionId": 30,
+    "userId": 5,
+    "type": "2 Way Trip",
+    "amount": 5,
+    "balanceAfter": 0,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:42:58.683Z"
+  },
+  {
+    "transactionId": 31,
+    "userId": 5,
+    "type": "2 Way Trip - Bike Rental",
+    "amount": 0,
+    "balanceAfter": 0,
+    "status": "Success",
+    "timestamp": "2026-07-12T10:43:03.369Z"
+  }
 ]

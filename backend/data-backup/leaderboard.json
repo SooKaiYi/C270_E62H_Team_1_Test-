@@ -1,20 +1,20 @@
 [
-    {
-        "userId": 5,
-        "userName": "ky",
-        "city": "Your City",
-        "bikeName": "Mountain Bike",
-        "distance": 12.35,
-        "rides": 2,
-        "lastRideAt": "2026-07-12T10:10:15.211Z"
-    },
-    {
-        "userId": 1,
-        "userName": "Administrator",
-        "city": "London",
-        "bikeName": "Road Bike",
-        "distance": 142.8,
-        "rides": 6,
-        "lastRideAt": "2026-07-12T09:37:44.159Z"
-    }
+  {
+    "userId": 5,
+    "userName": "ky",
+    "city": "Your City",
+    "bikeName": "Mountain Bike",
+    "distance": 12.35,
+    "rides": 2,
+    "lastRideAt": "2026-07-12T10:10:15.211Z"
+  },
+  {
+    "userId": 1,
+    "userName": "Administrator",
+    "city": "London",
+    "bikeName": "Road Bike",
+    "distance": 142.8,
+    "rides": 6,
+    "lastRideAt": "2026-07-12T09:37:44.159Z"
+  }
 ]

@@ -1,47 +1,40 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Bike Locator Map</title>
+  <head>
+    <title>Bike Locator Map</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="/styles/map.css">
-</head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="/styles/map.css" />
+  </head>
 
-<body>
-  <div class="map-card">
-    <h1>Bike Locator Map</h1>
-    <a href="/home" class="home-btn">← Back to Home</a>
-    <div class="search-container">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search for a location (e.g., Orchard, Marina Bay, Bugis)"
-      />
+  <body>
+    <div class="map-card">
+      <h1>Bike Locator Map</h1>
+      <a href="/home" class="home-btn">← Back to Home</a>
+      <div class="search-container">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search for a location (e.g., Orchard, Marina Bay, Bugis)"
+        />
 
-      <button onclick="searchLocation()">
-        Search
-      </button>
+        <button onclick="searchLocation()">Search</button>
+      </div>
+      <div class="manual-location-container">
+        <button id="selectLocationBtn">📍 I'm Here!</button>
+      </div>
+
+      <div id="searchResults" class="search-results"></div>
+
+      <div id="map"></div>
     </div>
-    <div class="manual-location-container">
-      <button id="selectLocationBtn">
-    📍 I'm Here!
-      </button>
-    </div>
 
-    <div id="searchResults" class="search-results"></div>
+    <script id="bike-data" type="application/json">
+      <%- JSON.stringify(bikeStations) %>
+    </script>
 
-    <div id="map"></div>
-  </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <script id="bike-data" type="application/json">
-    <%- JSON.stringify(bikeStations) %>
-  </script>
-
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-  <script src="/src/map.js"></script>
-
-</body>
+    <script src="/src/map.js"></script>
+  </body>
 </html>
-
-

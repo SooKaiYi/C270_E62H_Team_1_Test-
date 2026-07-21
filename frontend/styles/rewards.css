@@ -1,37 +1,27 @@
-.referral-code-box{
+.referral-code-box {
+  background: #f4f6f8;
 
-    background:#f4f6f8;
+  padding: 14px 18px;
 
-    padding:14px 18px;
-
-    border-radius:15px;
-
+  border-radius: 15px;
 }
 
-.referral-code-box strong{
+.referral-code-box strong {
+  font-family: 'Courier New', monospace;
 
-    font-family:'Courier New', monospace;
-
-    letter-spacing:1px;
-
+  letter-spacing: 1px;
 }
 
-.reward-card{
+.reward-card {
+  border: none;
 
-    border:none;
-
-    border-radius:15px;
-
+  border-radius: 15px;
 }
 
-.reward-card.highlight{
-
-    background:#fffbea;
-
+.reward-card.highlight {
+  background: #fffbea;
 }
 
-.transaction:last-child{
-
-    border-bottom:none !important;
-
+.transaction:last-child {
+  border-bottom: none !important;
 }

@@ -1,12 +1,12 @@
-const pool = require("../config/database");
-const { InsufficientBalanceError } = require("./walletModel");
+const pool = require('../config/database');
+const { InsufficientBalanceError } = require('./walletModel');
 
 // =======================================
 // Get All Rentals
 // =======================================
 
 async function getAllRentals() {
-    const [rows] = await pool.execute(`
+  const [rows] = await pool.execute(`
         SELECT
             id,
             userId,
@@ -22,7 +22,7 @@ async function getAllRentals() {
         ORDER BY rentedAt DESC
     `);
 
-    return rows;
+  return rows;
 }
 
 // =======================================
@@ -30,8 +30,8 @@ async function getAllRentals() {
 // =======================================
 
 async function getUserRentals(userId) {
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT
             id,
             userId,
@@ -47,10 +47,10 @@ async function getUserRentals(userId) {
         WHERE userId = ?
         ORDER BY rentedAt DESC
         `,
-        [userId]
-    );
+    [userId]
+  );
 
-    return rows;
+  return rows;
 }
 
 // =======================================
@@ -58,13 +58,13 @@ async function getUserRentals(userId) {
 // =======================================
 
 async function rentBike(user) {
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        const [bikeRows] = await connection.execute(
-            `
+    const [bikeRows] = await connection.execute(
+      `
             SELECT
                 id,
                 name,
@@ -74,23 +74,21 @@ async function rentBike(user) {
             WHERE id = ?
             FOR UPDATE
             `,
-            [user.bikeId]
-        );
+      [user.bikeId]
+    );
 
-        const bike = bikeRows[0];
+    const bike = bikeRows[0];
 
-        if (!bike) {
-            throw new Error("Bike not found.");
-        }
+    if (!bike) {
+      throw new Error('Bike not found.');
+    }
 
-        if (bike.status === "Rented") {
-            throw new Error(
-                "This bike has already been rented."
-            );
-        }
+    if (bike.status === 'Rented') {
+      throw new Error('This bike has already been rented.');
+    }
 
-        const [walletRows] = await connection.execute(
-            `
+    const [walletRows] = await connection.execute(
+      `
             SELECT
                 userId,
                 balance,
@@ -100,51 +98,49 @@ async function rentBike(user) {
             WHERE userId = ?
             FOR UPDATE
             `,
-            [user.userId]
-        );
+      [user.userId]
+    );
 
-        const wallet = walletRows[0];
+    const wallet = walletRows[0];
 
-        if (!wallet) {
-            throw new Error("Wallet not found.");
-        }
+    if (!wallet) {
+      throw new Error('Wallet not found.');
+    }
 
-        let balance = Number(wallet.balance);
-        let tripCredits = Number(wallet.tripCredits || 0);
-        let dayPassCredits = Number(wallet.dayPassCredits || 0);
+    let balance = Number(wallet.balance);
+    let tripCredits = Number(wallet.tripCredits || 0);
+    let dayPassCredits = Number(wallet.dayPassCredits || 0);
 
-        const bikePrice = Number(bike.price);
+    const bikePrice = Number(bike.price);
 
-        let paymentMethod;
-        let chargedAmount = bikePrice;
+    let paymentMethod;
+    let chargedAmount = bikePrice;
 
-        if (dayPassCredits > 0) {
-            dayPassCredits -= 1;
-            paymentMethod = "Day Pass";
-            chargedAmount = 0;
-        } else if (tripCredits > 0) {
-            tripCredits -= 1;
-            paymentMethod = "2 Way Trip";
-            chargedAmount = 0;
-        } else if (balance >= bikePrice) {
-            balance = Number(
-                (balance - bikePrice).toFixed(2)
-            );
+    if (dayPassCredits > 0) {
+      dayPassCredits -= 1;
+      paymentMethod = 'Day Pass';
+      chargedAmount = 0;
+    } else if (tripCredits > 0) {
+      tripCredits -= 1;
+      paymentMethod = '2 Way Trip';
+      chargedAmount = 0;
+    } else if (balance >= bikePrice) {
+      balance = Number((balance - bikePrice).toFixed(2));
 
-            paymentMethod = "Wallet";
-        } else {
-            const error = new InsufficientBalanceError(
-                "Insufficient wallet balance. Please top up credits first."
-            );
+      paymentMethod = 'Wallet';
+    } else {
+      const error = new InsufficientBalanceError(
+        'Insufficient wallet balance. Please top up credits first.'
+      );
 
-            error.balance = balance;
-            error.required = bikePrice;
+      error.balance = balance;
+      error.required = bikePrice;
 
-            throw error;
-        }
+      throw error;
+    }
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE wallets
             SET
                 balance = ?,
@@ -152,25 +148,20 @@ async function rentBike(user) {
                 dayPassCredits = ?
             WHERE userId = ?
             `,
-            [
-                balance,
-                tripCredits,
-                dayPassCredits,
-                user.userId
-            ]
-        );
+      [balance, tripCredits, dayPassCredits, user.userId]
+    );
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE bikes
             SET status = 'Rented'
             WHERE id = ?
             `,
-            [bike.id]
-        );
+      [bike.id]
+    );
 
-        const [rentalResult] = await connection.execute(
-            `
+    const [rentalResult] = await connection.execute(
+      `
             INSERT INTO rentals (
                 userId,
                 userName,
@@ -184,19 +175,19 @@ async function rentBike(user) {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(3), NULL)
             `,
-            [
-                user.userId,
-                user.userName,
-                bike.id,
-                bike.name,
-                chargedAmount,
-                paymentMethod,
-                "Active"
-            ]
-        );
+      [
+        user.userId,
+        user.userName,
+        bike.id,
+        bike.name,
+        chargedAmount,
+        paymentMethod,
+        'Active',
+      ]
+    );
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             INSERT INTO wallet_transactions (
                 transactionId,
                 userId,
@@ -216,32 +207,27 @@ async function rentBike(user) {
                 NOW(3)
             FROM wallet_transactions
             `,
-            [
-                user.userId,
-                `${paymentMethod} - Bike Rental`,
-                chargedAmount,
-                balance
-            ]
-        );
+      [user.userId, `${paymentMethod} - Bike Rental`, chargedAmount, balance]
+    );
 
-        await connection.commit();
+    await connection.commit();
 
-        const [rows] = await pool.execute(
-            `
+    const [rows] = await pool.execute(
+      `
             SELECT *
             FROM rentals
             WHERE id = ?
             `,
-            [rentalResult.insertId]
-        );
+      [rentalResult.insertId]
+    );
 
-        return rows[0];
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    return rows[0];
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 // =======================================
@@ -249,13 +235,13 @@ async function rentBike(user) {
 // =======================================
 
 async function returnBike(rentalId) {
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        const [rentalRows] = await connection.execute(
-            `
+    const [rentalRows] = await connection.execute(
+      `
             SELECT
                 id,
                 bikeId,
@@ -264,59 +250,57 @@ async function returnBike(rentalId) {
             WHERE id = ?
             FOR UPDATE
             `,
-            [rentalId]
-        );
+      [rentalId]
+    );
 
-        const rental = rentalRows[0];
+    const rental = rentalRows[0];
 
-        if (!rental) {
-            throw new Error("Rental not found.");
-        }
+    if (!rental) {
+      throw new Error('Rental not found.');
+    }
 
-        if (rental.status === "Returned") {
-            throw new Error(
-                "This rental has already been returned."
-            );
-        }
+    if (rental.status === 'Returned') {
+      throw new Error('This rental has already been returned.');
+    }
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE rentals
             SET
                 status = 'Returned',
                 returnedAt = NOW(3)
             WHERE id = ?
             `,
-            [rentalId]
-        );
+      [rentalId]
+    );
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             UPDATE bikes
             SET status = 'Available'
             WHERE id = ?
             `,
-            [rental.bikeId]
-        );
+      [rental.bikeId]
+    );
 
-        await connection.commit();
+    await connection.commit();
 
-        const [rows] = await pool.execute(
-            `
+    const [rows] = await pool.execute(
+      `
             SELECT *
             FROM rentals
             WHERE id = ?
             `,
-            [rentalId]
-        );
+      [rentalId]
+    );
 
-        return rows[0];
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    return rows[0];
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 // =======================================
@@ -324,50 +308,41 @@ async function returnBike(rentalId) {
 // =======================================
 
 async function updateRental(rentalId, updatedData) {
-    const allowedStatuses = [
-        "Active",
-        "Returned",
-        "Cancelled"
-    ];
+  const allowedStatuses = ['Active', 'Returned', 'Cancelled'];
 
-    const status = updatedData.status;
+  const status = updatedData.status;
 
-    if (!allowedStatuses.includes(status)) {
-        throw new Error("Invalid rental status.");
-    }
+  if (!allowedStatuses.includes(status)) {
+    throw new Error('Invalid rental status.');
+  }
 
-    const returnedAt =
-        updatedData.returnedAt || null;
+  const returnedAt = updatedData.returnedAt || null;
 
-    const [result] = await pool.execute(
-        `
+  const [result] = await pool.execute(
+    `
         UPDATE rentals
         SET
             status = ?,
             returnedAt = ?
         WHERE id = ?
         `,
-        [
-            status,
-            returnedAt,
-            rentalId
-        ]
-    );
+    [status, returnedAt, rentalId]
+  );
 
-    if (result.affectedRows === 0) {
-        throw new Error("Rental not found.");
-    }
+  if (result.affectedRows === 0) {
+    throw new Error('Rental not found.');
+  }
 
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT *
         FROM rentals
         WHERE id = ?
         `,
-        [rentalId]
-    );
+    [rentalId]
+  );
 
-    return rows[0];
+  return rows[0];
 }
 
 // =======================================
@@ -375,13 +350,13 @@ async function updateRental(rentalId, updatedData) {
 // =======================================
 
 async function deleteRental(rentalId) {
-    const connection = await pool.getConnection();
+  const connection = await pool.getConnection();
 
-    try {
-        await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-        const [rentalRows] = await connection.execute(
-            `
+    const [rentalRows] = await connection.execute(
+      `
             SELECT
                 id,
                 bikeId,
@@ -390,50 +365,50 @@ async function deleteRental(rentalId) {
             WHERE id = ?
             FOR UPDATE
             `,
-            [rentalId]
-        );
+      [rentalId]
+    );
 
-        const rental = rentalRows[0];
+    const rental = rentalRows[0];
 
-        if (!rental) {
-            throw new Error("Rental not found.");
-        }
+    if (!rental) {
+      throw new Error('Rental not found.');
+    }
 
-        if (rental.status === "Active") {
-            await connection.execute(
-                `
+    if (rental.status === 'Active') {
+      await connection.execute(
+        `
                 UPDATE bikes
                 SET status = 'Available'
                 WHERE id = ?
                 `,
-                [rental.bikeId]
-            );
-        }
+        [rental.bikeId]
+      );
+    }
 
-        await connection.execute(
-            `
+    await connection.execute(
+      `
             DELETE FROM rentals
             WHERE id = ?
             `,
-            [rentalId]
-        );
+      [rentalId]
+    );
 
-        await connection.commit();
+    await connection.commit();
 
-        return true;
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 module.exports = {
-    getAllRentals,
-    getUserRentals,
-    rentBike,
-    returnBike,
-    updateRental,
-    deleteRental
+  getAllRentals,
+  getUserRentals,
+  rentBike,
+  returnBike,
+  updateRental,
+  deleteRental,
 };

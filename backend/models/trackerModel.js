@@ -1,30 +1,30 @@
-const pool = require("../config/database");
+const pool = require('../config/database');
 
 function normalizeUserId(userId) {
-    const numericUserId = Number(userId);
+  const numericUserId = Number(userId);
 
-    if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
-        throw new Error("Invalid user ID.");
-    }
+  if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+    throw new Error('Invalid user ID.');
+  }
 
-    return numericUserId;
+  return numericUserId;
 }
 
 function normalizeTracker(entry) {
-    if (!entry) {
-        return null;
-    }
+  if (!entry) {
+    return null;
+  }
 
-    return {
-        ...entry,
-        userId: Number(entry.userId),
-        distance: Number(entry.distance) || 0,
-        rides: Number(entry.rides) || 0
-    };
+  return {
+    ...entry,
+    userId: Number(entry.userId),
+    distance: Number(entry.distance) || 0,
+    rides: Number(entry.rides) || 0,
+  };
 }
 
 async function getAllTrackers() {
-    const [rows] = await pool.execute(`
+  const [rows] = await pool.execute(`
         SELECT
             userId,
             userName,
@@ -37,14 +37,14 @@ async function getAllTrackers() {
         ORDER BY distance DESC, rides DESC
     `);
 
-    return rows.map(normalizeTracker);
+  return rows.map(normalizeTracker);
 }
 
 async function getTrackerByUser(userId) {
-    const numericUserId = normalizeUserId(userId);
+  const numericUserId = normalizeUserId(userId);
 
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT
             userId,
             userName,
@@ -57,33 +57,29 @@ async function getTrackerByUser(userId) {
         WHERE userId = ?
         LIMIT 1
         `,
-        [numericUserId]
-    );
+    [numericUserId]
+  );
 
-    return normalizeTracker(rows[0]);
+  return normalizeTracker(rows[0]);
 }
 
 async function saveRideDistance(user, distance, bikeName = null) {
-    const numericUserId = normalizeUserId(
-        user.id || user.userId
-    );
+  const numericUserId = normalizeUserId(user.id || user.userId);
 
-    const rideDistance = Number(distance);
+  const rideDistance = Number(distance);
 
-    if (!Number.isFinite(rideDistance) || rideDistance < 0) {
-        throw new Error("Invalid distance.");
-    }
+  if (!Number.isFinite(rideDistance) || rideDistance < 0) {
+    throw new Error('Invalid distance.');
+  }
 
-    const userName =
-        user.name || user.userName || "Unknown Rider";
+  const userName = user.name || user.userName || 'Unknown Rider';
 
-    const city = user.city || "Your City";
+  const city = user.city || 'Your City';
 
-    const selectedBikeName =
-        bikeName || "Unknown Bike";
+  const selectedBikeName = bikeName || 'Unknown Bike';
 
-    await pool.execute(
-        `
+  await pool.execute(
+    `
         INSERT INTO tracker (
             userId,
             userName,
@@ -106,20 +102,14 @@ async function saveRideDistance(user, distance, bikeName = null) {
             rides = rides + 1,
             lastRideAt = NOW(3)
         `,
-        [
-            numericUserId,
-            userName,
-            city,
-            selectedBikeName,
-            rideDistance
-        ]
-    );
+    [numericUserId, userName, city, selectedBikeName, rideDistance]
+  );
 
-    return getTrackerByUser(numericUserId);
+  return getTrackerByUser(numericUserId);
 }
 
 module.exports = {
-    getAllTrackers,
-    getTrackerByUser,
-    saveRideDistance
+  getAllTrackers,
+  getTrackerByUser,
+  saveRideDistance,
 };

@@ -1,10 +1,10 @@
-const pool = require("../config/database");
+const pool = require('../config/database');
 
 // ==============================
 // Get all bikes
 // ==============================
 async function getAllBikes() {
-    const [rows] = await pool.execute(`
+  const [rows] = await pool.execute(`
         SELECT
             id,
             name,
@@ -16,15 +16,15 @@ async function getAllBikes() {
         ORDER BY id
     `);
 
-    return rows;
+  return rows;
 }
 
 // ==============================
 // Find bike by ID
 // ==============================
 async function getBikeById(id) {
-    const [rows] = await pool.execute(
-        `
+  const [rows] = await pool.execute(
+    `
         SELECT
             id,
             name,
@@ -36,32 +36,31 @@ async function getBikeById(id) {
         WHERE id = ?
         LIMIT 1
         `,
-        [id]
-    );
+    [id]
+  );
 
-    return rows[0] || null;
+  return rows[0] || null;
 }
 
 // ==============================
 // Add bike
 // ==============================
 async function addBike(bikeData) {
-    const name = bikeData.name?.trim();
-    const description = bikeData.description?.trim() || "";
-    const price = Number(bikeData.price);
-    const image =
-        bikeData.image?.trim() || "/images/default-bike.jpg";
+  const name = bikeData.name?.trim();
+  const description = bikeData.description?.trim() || '';
+  const price = Number(bikeData.price);
+  const image = bikeData.image?.trim() || '/images/default-bike.jpg';
 
-    if (!name) {
-        throw new Error("Bike name is required.");
-    }
+  if (!name) {
+    throw new Error('Bike name is required.');
+  }
 
-    if (!Number.isFinite(price) || price < 0) {
-        throw new Error("Bike price must be a valid number.");
-    }
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error('Bike price must be a valid number.');
+  }
 
-    const [result] = await pool.execute(
-        `
+  const [result] = await pool.execute(
+    `
         INSERT INTO bikes (
             name,
             description,
@@ -71,39 +70,32 @@ async function addBike(bikeData) {
         )
         VALUES (?, ?, ?, ?, ?)
         `,
-        [
-            name,
-            description,
-            price,
-            "Available",
-            image
-        ]
-    );
+    [name, description, price, 'Available', image]
+  );
 
-    return getBikeById(result.insertId);
+  return getBikeById(result.insertId);
 }
 
 // ==============================
 // Update bike
 // ==============================
 async function updateBike(id, bikeData) {
-    const name = bikeData.name?.trim();
-    const description = bikeData.description?.trim() || "";
-    const price = Number(bikeData.price);
-    const status = bikeData.status?.trim() || "Available";
-    const image =
-        bikeData.image?.trim() || "/images/default-bike.jpg";
+  const name = bikeData.name?.trim();
+  const description = bikeData.description?.trim() || '';
+  const price = Number(bikeData.price);
+  const status = bikeData.status?.trim() || 'Available';
+  const image = bikeData.image?.trim() || '/images/default-bike.jpg';
 
-    if (!name) {
-        throw new Error("Bike name is required.");
-    }
+  if (!name) {
+    throw new Error('Bike name is required.');
+  }
 
-    if (!Number.isFinite(price) || price < 0) {
-        throw new Error("Bike price must be a valid number.");
-    }
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error('Bike price must be a valid number.');
+  }
 
-    const [result] = await pool.execute(
-        `
+  const [result] = await pool.execute(
+    `
         UPDATE bikes
         SET
             name = ?,
@@ -113,88 +105,76 @@ async function updateBike(id, bikeData) {
             image = ?
         WHERE id = ?
         `,
-        [
-            name,
-            description,
-            price,
-            status,
-            image,
-            id
-        ]
-    );
+    [name, description, price, status, image, id]
+  );
 
-    if (result.affectedRows === 0) {
-        throw new Error("Bike not found.");
-    }
+  if (result.affectedRows === 0) {
+    throw new Error('Bike not found.');
+  }
 
-    return getBikeById(id);
+  return getBikeById(id);
 }
 
 // ==============================
 // Delete bike
 // ==============================
 async function deleteBike(id) {
-    try {
-        const [result] = await pool.execute(
-            `
+  try {
+    const [result] = await pool.execute(
+      `
             DELETE FROM bikes
             WHERE id = ?
             `,
-            [id]
-        );
+      [id]
+    );
 
-        if (result.affectedRows === 0) {
-            throw new Error("Bike not found.");
-        }
-
-        return true;
-    } catch (error) {
-        if (error.code === "ER_ROW_IS_REFERENCED_2") {
-            throw new Error(
-                "This bike cannot be deleted because it has rental records."
-            );
-        }
-
-        throw error;
+    if (result.affectedRows === 0) {
+      throw new Error('Bike not found.');
     }
+
+    return true;
+  } catch (error) {
+    if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+      throw new Error(
+        'This bike cannot be deleted because it has rental records.'
+      );
+    }
+
+    throw error;
+  }
 }
 
 // ==============================
 // Change bike status
 // ==============================
 async function updateBikeStatus(id, status) {
-    const allowedStatuses = [
-        "Available",
-        "Rented",
-        "Maintenance",
-        "Unavailable"
-    ];
+  const allowedStatuses = ['Available', 'Rented', 'Maintenance', 'Unavailable'];
 
-    if (!allowedStatuses.includes(status)) {
-        throw new Error("Invalid bike status.");
-    }
+  if (!allowedStatuses.includes(status)) {
+    throw new Error('Invalid bike status.');
+  }
 
-    const [result] = await pool.execute(
-        `
+  const [result] = await pool.execute(
+    `
         UPDATE bikes
         SET status = ?
         WHERE id = ?
         `,
-        [status, id]
-    );
+    [status, id]
+  );
 
-    if (result.affectedRows === 0) {
-        throw new Error("Bike not found.");
-    }
+  if (result.affectedRows === 0) {
+    throw new Error('Bike not found.');
+  }
 
-    return getBikeById(id);
+  return getBikeById(id);
 }
 
 module.exports = {
-    getAllBikes,
-    getBikeById,
-    addBike,
-    updateBike,
-    deleteBike,
-    updateBikeStatus
+  getAllBikes,
+  getBikeById,
+  addBike,
+  updateBike,
+  deleteBike,
+  updateBikeStatus,
 };
