@@ -1,62 +1,76 @@
-const fs = require("fs");
-const path = require("path");
-
-const rewardsFile = path.join(__dirname, "../data/rewards.json");
-const transactionsFile = path.join(__dirname, "../data/transactions.json");
-
-// =======================================
-// File helpers
-// =======================================
-
-function loadRewards() {
-    if (!fs.existsSync(rewardsFile)) return {};
-    return JSON.parse(fs.readFileSync(rewardsFile, "utf8"));
-}
-
-function saveRewards(data) {
-    fs.writeFileSync(rewardsFile, JSON.stringify(data, null, 2));
-}
-
-function loadTransactions() {
-    if (!fs.existsSync(transactionsFile)) return [];
-    return JSON.parse(fs.readFileSync(transactionsFile, "utf8"));
-}
-
-function saveTransactions(data) {
-    fs.writeFileSync(transactionsFile, JSON.stringify(data, null, 2));
-}
+const pool = require("../config/database");
 
 // =======================================
 // Referral code generation
 // =======================================
 
 function generateReferralCode(name, id) {
-    const base = (name || "USER").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "USER";
+    const base =
+        (name || "USER")
+            .toUpperCase()
+            .replace(/[^A-Z]/g, "")
+            .slice(0, 8) || "USER";
+
     return `${base}${id}${new Date().getFullYear()}`;
 }
 
 // =======================================
-// Get (or lazily create) a user's rewards record
+// Get or create rewards record
 // =======================================
 
-function getOrCreateUserRewards(user) {
-    const rewards = loadRewards();
-    const key = String(user.id);
+async function getOrCreateUserRewards(user) {
+    const userId = Number(user.id);
 
-    if (!rewards[key]) {
-        rewards[key] = {
-            points: 0,
-            freeHours: 0,
-            rides: 0,
-            totalMinutes: 0,
-            referralCode: generateReferralCode(user.name, user.id),
-            friendsReferred: 0,
-            referredBy: null
-        };
-        saveRewards(rewards);
-    }
+    await pool.execute(
+        `
+        INSERT INTO rewards (
+            userId,
+            points,
+            freeHours,
+            rides,
+            totalMinutes,
+            referralCode,
+            friendsReferred,
+            referredBy
+        )
+        VALUES (?, 0, 0, 0, 0, ?, 0, NULL)
+        ON DUPLICATE KEY UPDATE
+            userId = VALUES(userId)
+        `,
+        [
+            userId,
+            generateReferralCode(user.name, userId)
+        ]
+    );
 
-    return rewards[key];
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            userId,
+            points,
+            freeHours,
+            rides,
+            totalMinutes,
+            referralCode,
+            friendsReferred,
+            referredBy
+        FROM rewards
+        WHERE userId = ?
+        LIMIT 1
+        `,
+        [userId]
+    );
+
+    const reward = rows[0];
+
+    return {
+        ...reward,
+        points: Number(reward.points),
+        freeHours: Number(reward.freeHours),
+        rides: Number(reward.rides),
+        totalMinutes: Number(reward.totalMinutes),
+        friendsReferred: Number(reward.friendsReferred)
+    };
 }
 
 // =======================================
@@ -64,14 +78,15 @@ function getOrCreateUserRewards(user) {
 // =======================================
 
 function calculatePoints(minutes) {
-    const roundedMinutes = Math.floor(minutes);
+    const numericMinutes = Number(minutes);
+    const roundedMinutes = Math.floor(numericMinutes);
 
     if (roundedMinutes < 10) {
         return {
             points: 0,
             roundedMinutes,
-            originalMinutes: minutes,
-            message: "Ride too short (need ≥10 min)"
+            originalMinutes: numericMinutes,
+            message: "Ride too short (need at least 10 min)"
         };
     }
 
@@ -84,174 +99,504 @@ function calculatePoints(minutes) {
     return {
         points,
         roundedMinutes,
-        originalMinutes: minutes,
+        originalMinutes: numericMinutes,
         message: `Earned ${points} points for ${roundedMinutes}min ride`
     };
 }
 
-function addRidePoints(user, minutes) {
-    const rewards = loadRewards();
-    const key = String(user.id);
-    const record = rewards[key] || getOrCreateUserRewards(user);
+// =======================================
+// Add ride points
+// =======================================
 
+async function addRidePoints(user, minutes) {
     const result = calculatePoints(minutes);
 
     if (result.points === 0) {
-        return { success: false, points: 0, message: result.message, transaction: null };
-    }
-
-    record.points += result.points;
-    record.totalMinutes += result.roundedMinutes;
-    record.rides += 1;
-    rewards[key] = record;
-    saveRewards(rewards);
-
-    const hours = Math.floor(result.roundedMinutes / 60);
-    const mins = result.roundedMinutes % 60;
-    const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-
-    const transactions = loadTransactions();
-    const transaction = {
-        id: transactions.length + 1,
-        userId: user.id,
-        points: result.points,
-        type: "earned",
-        desc: `Ride ${timeStr} (${result.originalMinutes.toFixed(1)} min rounded down)`,
-        date: new Date().toLocaleString()
-    };
-    transactions.unshift(transaction);
-    saveTransactions(transactions);
-
-    return {
-        success: true,
-        points: result.points,
-        newBalance: record.points,
-        roundedMinutes: result.roundedMinutes,
-        originalMinutes: result.originalMinutes,
-        message: `🎉 Earned ${result.points} points!`,
-        transaction
-    };
-}
-
-// =======================================
-// Referral
-// =======================================
-
-function processReferral(user, referredByCode) {
-    const rewards = loadRewards();
-    const key = String(user.id);
-    const record = rewards[key] || getOrCreateUserRewards(user);
-
-    const referrerEntry = Object.entries(rewards).find(
-        ([, r]) => r.referralCode.toUpperCase() === referredByCode.toUpperCase()
-    );
-
-    if (!referrerEntry) {
-        return { success: false, message: "Invalid referral code." };
-    }
-
-    const [referrerId, referrerRecord] = referrerEntry;
-
-    if (record.referredBy) {
-        return { success: false, message: "You already used a referral code!" };
-    }
-
-    if (referrerId === key) {
-        return { success: false, message: "You cannot use your own code!" };
-    }
-
-    const pointsEarned = referrerRecord.friendsReferred === 0 ? 20 : 5;
-
-    referrerRecord.friendsReferred += 1;
-    referrerRecord.points += pointsEarned;
-
-    record.referredBy = referredByCode;
-    record.points += 5;
-
-    rewards[referrerId] = referrerRecord;
-    rewards[key] = record;
-    saveRewards(rewards);
-
-    const transactions = loadTransactions();
-    transactions.unshift({
-        id: transactions.length + 1,
-        userId: parseInt(referrerId),
-        points: pointsEarned,
-        type: "earned",
-        desc: `🎉 Referral bonus: ${user.name} used your code! (+${pointsEarned} pts)`,
-        date: new Date().toLocaleString()
-    });
-    transactions.unshift({
-        id: transactions.length + 2,
-        userId: user.id,
-        points: 5,
-        type: "earned",
-        desc: `🎉 Welcome bonus: Used a referral code! (+5 pts)`,
-        date: new Date().toLocaleString()
-    });
-    saveTransactions(transactions);
-
-    return {
-        success: true,
-        message: `You used the code! You got 5 points, they got ${pointsEarned} points!`,
-        pointsEarned,
-        newPoints: record.points
-    };
-}
-
-// =======================================
-// Redeem
-// =======================================
-
-function redeem(user, rewardPoints) {
-    const rewards = loadRewards();
-    const key = String(user.id);
-    const record = rewards[key] || getOrCreateUserRewards(user);
-
-    if (record.points < rewardPoints) {
         return {
             success: false,
-            message: `Not enough points. Need ${rewardPoints}, have ${record.points}`
+            points: 0,
+            message: result.message,
+            transaction: null
         };
     }
 
-    record.points -= rewardPoints;
+    const connection = await pool.getConnection();
 
-    let hours = 0;
-    if (rewardPoints === 25) hours = 0.5;
-    else if (rewardPoints === 50) hours = 1;
-    else if (rewardPoints === 100) hours = 2;
+    try {
+        await connection.beginTransaction();
 
-    if (hours > 0) record.freeHours += hours;
+        const referralCode = generateReferralCode(
+            user.name,
+            user.id
+        );
 
-    rewards[key] = record;
-    saveRewards(rewards);
+        await connection.execute(
+            `
+            INSERT INTO rewards (
+                userId,
+                points,
+                freeHours,
+                rides,
+                totalMinutes,
+                referralCode,
+                friendsReferred,
+                referredBy
+            )
+            VALUES (?, 0, 0, 0, 0, ?, 0, NULL)
+            ON DUPLICATE KEY UPDATE
+                userId = VALUES(userId)
+            `,
+            [user.id, referralCode]
+        );
 
-    const transactions = loadTransactions();
-    transactions.unshift({
-        id: transactions.length + 1,
-        userId: user.id,
-        points: rewardPoints,
-        type: "redeemed",
-        desc: `Redeemed ${rewardPoints} pts for ${hours}h free`,
-        date: new Date().toLocaleString()
-    });
-    saveTransactions(transactions);
+        await connection.execute(
+            `
+            UPDATE rewards
+            SET
+                points = points + ?,
+                totalMinutes = totalMinutes + ?,
+                rides = rides + 1
+            WHERE userId = ?
+            `,
+            [
+                result.points,
+                result.roundedMinutes,
+                user.id
+            ]
+        );
 
-    return {
-        success: true,
-        message: `🎉 Redeemed ${rewardPoints} points for ${hours}h free ride!`,
-        newPoints: record.points,
-        freeHours: record.freeHours
-    };
+        const hours = Math.floor(
+            result.roundedMinutes / 60
+        );
+
+        const mins = result.roundedMinutes % 60;
+
+        const timeString =
+            hours > 0
+                ? `${hours}h ${mins}m`
+                : `${mins}m`;
+
+        const description =
+            `Ride ${timeString} ` +
+            `(${result.originalMinutes.toFixed(1)} min rounded down)`;
+
+        const [transactionResult] =
+            await connection.execute(
+                `
+                INSERT INTO reward_transactions (
+                    userId,
+                    points,
+                    type,
+                    description
+                )
+                VALUES (?, ?, 'earned', ?)
+                `,
+                [
+                    user.id,
+                    result.points,
+                    description
+                ]
+            );
+
+        const [rewardRows] = await connection.execute(
+            `
+            SELECT points
+            FROM rewards
+            WHERE userId = ?
+            `,
+            [user.id]
+        );
+
+        await connection.commit();
+
+        return {
+            success: true,
+            points: result.points,
+            newBalance: Number(rewardRows[0].points),
+            roundedMinutes: result.roundedMinutes,
+            originalMinutes: result.originalMinutes,
+            message: `🎉 Earned ${result.points} points!`,
+            transaction: {
+                id: transactionResult.insertId,
+                userId: Number(user.id),
+                points: result.points,
+                type: "earned",
+                desc: description,
+                date: new Date().toLocaleString()
+            }
+        };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
 
 // =======================================
-// Transactions for a user
+// Process referral
 // =======================================
 
-function getUserTransactions(userId) {
-    return loadTransactions().filter(t => t.userId === userId);
+async function processReferral(user, referredByCode) {
+    const code = String(referredByCode)
+        .trim()
+        .toUpperCase();
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const ownReferralCode = generateReferralCode(
+            user.name,
+            user.id
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO rewards (
+                userId,
+                points,
+                freeHours,
+                rides,
+                totalMinutes,
+                referralCode,
+                friendsReferred,
+                referredBy
+            )
+            VALUES (?, 0, 0, 0, 0, ?, 0, NULL)
+            ON DUPLICATE KEY UPDATE
+                userId = VALUES(userId)
+            `,
+            [user.id, ownReferralCode]
+        );
+
+        const [userRewardRows] =
+            await connection.execute(
+                `
+                SELECT
+                    userId,
+                    points,
+                    referredBy
+                FROM rewards
+                WHERE userId = ?
+                FOR UPDATE
+                `,
+                [user.id]
+            );
+
+        const userReward = userRewardRows[0];
+
+        if (userReward.referredBy) {
+            await connection.rollback();
+
+            return {
+                success: false,
+                message:
+                    "You already used a referral code!"
+            };
+        }
+
+        const [referrerRows] =
+            await connection.execute(
+                `
+                SELECT
+                    r.userId,
+                    r.points,
+                    r.friendsReferred,
+                    r.referralCode,
+                    u.name
+                FROM rewards r
+                INNER JOIN users u
+                    ON u.id = r.userId
+                WHERE UPPER(r.referralCode) = ?
+                LIMIT 1
+                FOR UPDATE
+                `,
+                [code]
+            );
+
+        const referrer = referrerRows[0];
+
+        if (!referrer) {
+            await connection.rollback();
+
+            return {
+                success: false,
+                message: "Invalid referral code."
+            };
+        }
+
+        if (Number(referrer.userId) === Number(user.id)) {
+            await connection.rollback();
+
+            return {
+                success: false,
+                message: "You cannot use your own code!"
+            };
+        }
+
+        const referrerPoints =
+            Number(referrer.friendsReferred) === 0
+                ? 20
+                : 5;
+
+        await connection.execute(
+            `
+            UPDATE rewards
+            SET
+                friendsReferred =
+                    friendsReferred + 1,
+                points = points + ?
+            WHERE userId = ?
+            `,
+            [
+                referrerPoints,
+                referrer.userId
+            ]
+        );
+
+        await connection.execute(
+            `
+            UPDATE rewards
+            SET
+                referredBy = ?,
+                points = points + 5
+            WHERE userId = ?
+            `,
+            [
+                code,
+                user.id
+            ]
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO reward_transactions (
+                userId,
+                points,
+                type,
+                description
+            )
+            VALUES (?, ?, 'earned', ?)
+            `,
+            [
+                referrer.userId,
+                referrerPoints,
+                `Referral bonus: ${user.name} used your code!`
+            ]
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO reward_transactions (
+                userId,
+                points,
+                type,
+                description
+            )
+            VALUES (?, 5, 'earned', ?)
+            `,
+            [
+                user.id,
+                "Welcome bonus: Used a referral code!"
+            ]
+        );
+
+        const [updatedRows] =
+            await connection.execute(
+                `
+                SELECT points
+                FROM rewards
+                WHERE userId = ?
+                `,
+                [user.id]
+            );
+
+        await connection.commit();
+
+        return {
+            success: true,
+            message:
+                `You got 5 points and they got ` +
+                `${referrerPoints} points!`,
+            pointsEarned: referrerPoints,
+            newPoints: Number(updatedRows[0].points)
+        };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+// =======================================
+// Redeem reward
+// =======================================
+
+async function redeem(user, rewardPoints) {
+    const pointsToRedeem = Number(rewardPoints);
+
+    const rewardOptions = {
+        25: 0.5,
+        50: 1,
+        100: 2
+    };
+
+    const hours = rewardOptions[pointsToRedeem];
+
+    if (!hours) {
+        return {
+            success: false,
+            message: "Invalid reward option."
+        };
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        const referralCode = generateReferralCode(
+            user.name,
+            user.id
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO rewards (
+                userId,
+                points,
+                freeHours,
+                rides,
+                totalMinutes,
+                referralCode,
+                friendsReferred,
+                referredBy
+            )
+            VALUES (?, 0, 0, 0, 0, ?, 0, NULL)
+            ON DUPLICATE KEY UPDATE
+                userId = VALUES(userId)
+            `,
+            [user.id, referralCode]
+        );
+
+        const [rows] = await connection.execute(
+            `
+            SELECT
+                points,
+                freeHours
+            FROM rewards
+            WHERE userId = ?
+            FOR UPDATE
+            `,
+            [user.id]
+        );
+
+        const record = rows[0];
+
+        if (Number(record.points) < pointsToRedeem) {
+            await connection.rollback();
+
+            return {
+                success: false,
+                message:
+                    `Not enough points. Need ` +
+                    `${pointsToRedeem}, have ${record.points}`
+            };
+        }
+
+        await connection.execute(
+            `
+            UPDATE rewards
+            SET
+                points = points - ?,
+                freeHours = freeHours + ?
+            WHERE userId = ?
+            `,
+            [
+                pointsToRedeem,
+                hours,
+                user.id
+            ]
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO reward_transactions (
+                userId,
+                points,
+                type,
+                description
+            )
+            VALUES (?, ?, 'redeemed', ?)
+            `,
+            [
+                user.id,
+                pointsToRedeem,
+                `Redeemed ${pointsToRedeem} pts for ${hours}h free`
+            ]
+        );
+
+        const [updatedRows] =
+            await connection.execute(
+                `
+                SELECT
+                    points,
+                    freeHours
+                FROM rewards
+                WHERE userId = ?
+                `,
+                [user.id]
+            );
+
+        await connection.commit();
+
+        return {
+            success: true,
+            message:
+                `🎉 Redeemed ${pointsToRedeem} points ` +
+                `for ${hours}h free ride!`,
+            newPoints: Number(updatedRows[0].points),
+            freeHours: Number(
+                updatedRows[0].freeHours
+            )
+        };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+// =======================================
+// User transaction history
+// =======================================
+
+async function getUserTransactions(userId) {
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            id,
+            userId,
+            points,
+            type,
+            description AS \`desc\`,
+            createdAt AS \`date\`
+        FROM reward_transactions
+        WHERE userId = ?
+        ORDER BY createdAt DESC, id DESC
+        `,
+        [userId]
+    );
+
+    return rows.map((transaction) => ({
+        ...transaction,
+        userId: Number(transaction.userId),
+        points: Number(transaction.points)
+    }));
 }
 
 module.exports = {

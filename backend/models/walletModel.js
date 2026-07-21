@@ -1,60 +1,91 @@
-const { readJson, writeJson } = require('./jsonFileModel');
+const pool = require("../config/database");
 
 const PASS_PRICES = {
-
     two_way_trip: {
-        label: '2 Way Trip',
-        price: 5.00,
+        label: "2 Way Trip",
+        price: 5.0,
         credits: 2,
-        transactionType: '2 Way Trip'
+        transactionType: "2 Way Trip"
     },
 
     day_pass: {
-        label: 'Day Pass',
-        price: 10.00,
+        label: "Day Pass",
+        price: 10.0,
         credits: 10,
-        transactionType: 'Day Pass'
+        transactionType: "Day Pass"
     }
-
 };
 
 class InsufficientBalanceError extends Error {
     constructor(message) {
         super(message);
-        this.name = 'InsufficientBalanceError';
+        this.name = "InsufficientBalanceError";
     }
-}
-
-let walletWriteQueue = Promise.resolve();
-
-function runWalletWrite(task) {
-    // Queue writes so two quick requests do not overwrite each other's JSON updates.
-    walletWriteQueue = walletWriteQueue.then(task, task);
-    return walletWriteQueue;
 }
 
 function normalizeUserId(userId) {
-    return Number(userId);
+    const numericUserId = Number(userId);
+
+    if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+        throw new Error("Invalid user ID.");
+    }
+
+    return numericUserId;
 }
+
+// =======================================
+// Get or create wallet
+// =======================================
 
 async function getOrCreateWallet(userId) {
     const numericUserId = normalizeUserId(userId);
-    const wallets = await readJson('wallets.json');
-    let wallet = wallets.find((item) => item.userId === numericUserId);
+
+    await pool.execute(
+        `
+        INSERT INTO wallets (
+            userId,
+            balance,
+            tripCredits,
+            dayPassCredits
+        )
+        VALUES (?, 0, 0, 0)
+        ON DUPLICATE KEY UPDATE
+            userId = VALUES(userId)
+        `,
+        [numericUserId]
+    );
+
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            userId,
+            balance,
+            tripCredits,
+            dayPassCredits
+        FROM wallets
+        WHERE userId = ?
+        LIMIT 1
+        `,
+        [numericUserId]
+    );
+
+    const wallet = rows[0];
 
     if (!wallet) {
-        wallet = {
-            userId: numericUserId,
-            balance: 0,
-            tripCredits: 0,
-            dayPassCredits: 0
-};
-        wallets.push(wallet);
-        await writeJson('wallets.json', wallets);
+        throw new Error("Unable to retrieve wallet.");
     }
 
-    return wallet;
+    return {
+        ...wallet,
+        balance: Number(wallet.balance),
+        tripCredits: Number(wallet.tripCredits),
+        dayPassCredits: Number(wallet.dayPassCredits)
+    };
 }
+
+// =======================================
+// Wallet dashboard
+// =======================================
 
 async function getWalletDashboard(userId) {
     const wallet = await getOrCreateWallet(userId);
@@ -66,201 +97,276 @@ async function getWalletDashboard(userId) {
     };
 }
 
+// =======================================
+// Top up wallet
+// =======================================
+
 async function topUpWallet(userId, amount) {
+    const numericUserId = normalizeUserId(userId);
     const topUpAmount = Number(amount);
 
     if (!Number.isFinite(topUpAmount) || topUpAmount <= 0) {
-        throw new Error('Top-up amount must be more than 0.');
+        throw new Error("Top-up amount must be more than 0.");
     }
 
-    return runWalletWrite(async () => {
-        const numericUserId = normalizeUserId(userId);
-        const wallets = await readJson('wallets.json');
-        const transactions = await readJson('wallet_transactions.json');
-        let wallet = wallets.find((item) => item.userId === numericUserId);
+    const connection = await pool.getConnection();
 
-        if (!wallet) {
-            wallet = {
-                userId: numericUserId,
-                balance: 0
-            };
-            wallets.push(wallet);
-        }
+    try {
+        await connection.beginTransaction();
 
-        const balanceAfter = Number(wallet.balance) + topUpAmount;
-        wallet.balance = Number(balanceAfter.toFixed(2));
+        await connection.execute(
+            `
+            INSERT INTO wallets (
+                userId,
+                balance,
+                tripCredits,
+                dayPassCredits
+            )
+            VALUES (?, 0, 0, 0)
+            ON DUPLICATE KEY UPDATE
+                userId = VALUES(userId)
+            `,
+            [numericUserId]
+        );
 
-        transactions.push(createTransaction(transactions, {
-            userId: numericUserId,
-            type: 'Top Up',
-            amount: topUpAmount,
-            balanceAfter: wallet.balance,
-            status: 'Success'
-        }));
+        const [walletRows] = await connection.execute(
+            `
+            SELECT
+                balance
+            FROM wallets
+            WHERE userId = ?
+            FOR UPDATE
+            `,
+            [numericUserId]
+        );
 
-        await writeJson('wallets.json', wallets);
-        await writeJson('wallet_transactions.json', transactions);
+        const currentBalance = Number(walletRows[0].balance);
 
-        return wallet.balance;
-    });
+        const balanceAfter = Number(
+            (currentBalance + topUpAmount).toFixed(2)
+        );
+
+        await connection.execute(
+            `
+            UPDATE wallets
+            SET balance = ?
+            WHERE userId = ?
+            `,
+            [balanceAfter, numericUserId]
+        );
+
+        await connection.execute(
+            `
+            INSERT INTO wallet_transactions (
+                userId,
+                type,
+                amount,
+                balanceAfter,
+                status,
+                timestamp
+            )
+            VALUES (?, ?, ?, ?, ?, NOW(3))
+            `,
+            [
+                numericUserId,
+                "Top Up",
+                Number(topUpAmount.toFixed(2)),
+                balanceAfter,
+                "Success"
+            ]
+        );
+
+        await connection.commit();
+
+        return balanceAfter;
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
 
-async function purchasePass(userId, passType) {
+// =======================================
+// Purchase pass
+// =======================================
 
+async function purchasePass(userId, passType) {
+    const numericUserId = normalizeUserId(userId);
     const selectedPass = PASS_PRICES[passType];
 
     if (!selectedPass) {
         throw new Error("Please choose a valid pass.");
     }
 
+    const connection = await pool.getConnection();
 
-    return runWalletWrite(async () => {
+    try {
+        await connection.beginTransaction();
 
-        const numericUserId = normalizeUserId(userId);
-
-        const wallets = await readJson("wallets.json");
-
-        const transactions = await readJson("wallet_transactions.json");
-
-
-        let wallet = wallets.find(
-            item => item.userId === numericUserId
+        await connection.execute(
+            `
+            INSERT INTO wallets (
+                userId,
+                balance,
+                tripCredits,
+                dayPassCredits
+            )
+            VALUES (?, 0, 0, 0)
+            ON DUPLICATE KEY UPDATE
+                userId = VALUES(userId)
+            `,
+            [numericUserId]
         );
 
+        const [walletRows] = await connection.execute(
+            `
+            SELECT
+                balance,
+                tripCredits,
+                dayPassCredits
+            FROM wallets
+            WHERE userId = ?
+            FOR UPDATE
+            `,
+            [numericUserId]
+        );
 
-        if (!wallet) {
-
-            wallet = {
-                userId: numericUserId,
-                balance: 0,
-                tripCredits: 0,
-                dayPassCredits: 0
-            };
-
-            wallets.push(wallet);
-
-        }
-
+        const wallet = walletRows[0];
 
         const currentBalance = Number(wallet.balance);
-
+        let tripCredits = Number(wallet.tripCredits);
+        let dayPassCredits = Number(wallet.dayPassCredits);
 
         if (currentBalance < selectedPass.price) {
-
-
-            transactions.push(createTransaction(transactions, {
-
-                userId: numericUserId,
-
-                type: selectedPass.transactionType,
-
-                amount: selectedPass.price,
-
-                balanceAfter: currentBalance,
-
-                status: "Failed"
-
-            }));
-
-
-            await writeJson(
-                "wallet_transactions.json",
-                transactions
+            await connection.execute(
+                `
+                INSERT INTO wallet_transactions (
+                    userId,
+                    type,
+                    amount,
+                    balanceAfter,
+                    status,
+                    timestamp
+                )
+                VALUES (?, ?, ?, ?, ?, NOW(3))
+                `,
+                [
+                    numericUserId,
+                    selectedPass.transactionType,
+                    selectedPass.price,
+                    currentBalance,
+                    "Failed"
+                ]
             );
 
+            await connection.commit();
 
             throw new InsufficientBalanceError(
                 "Insufficient wallet balance. Please top up credits first."
             );
-
         }
 
-
-        // Deduct pass purchase price
-        wallet.balance = Number(
+        const balanceAfter = Number(
             (currentBalance - selectedPass.price).toFixed(2)
         );
 
-
-        // Add rental credits
         if (passType === "two_way_trip") {
-
-            wallet.tripCredits += selectedPass.credits;
-
+            tripCredits += selectedPass.credits;
         }
-
 
         if (passType === "day_pass") {
-
-            wallet.dayPassCredits += selectedPass.credits;
-
+            dayPassCredits += selectedPass.credits;
         }
 
-
-
-        transactions.push(createTransaction(transactions, {
-
-            userId: numericUserId,
-
-            type: selectedPass.transactionType,
-
-            amount: selectedPass.price,
-
-            balanceAfter: wallet.balance,
-
-            status: "Success"
-
-        }));
-
-
-        await writeJson(
-            "wallets.json",
-            wallets
+        await connection.execute(
+            `
+            UPDATE wallets
+            SET
+                balance = ?,
+                tripCredits = ?,
+                dayPassCredits = ?
+            WHERE userId = ?
+            `,
+            [
+                balanceAfter,
+                tripCredits,
+                dayPassCredits,
+                numericUserId
+            ]
         );
 
-
-        await writeJson(
-            "wallet_transactions.json",
-            transactions
+        await connection.execute(
+            `
+            INSERT INTO wallet_transactions (
+                userId,
+                type,
+                amount,
+                balanceAfter,
+                status,
+                timestamp
+            )
+            VALUES (?, ?, ?, ?, ?, NOW(3))
+            `,
+            [
+                numericUserId,
+                selectedPass.transactionType,
+                selectedPass.price,
+                balanceAfter,
+                "Success"
+            ]
         );
 
+        await connection.commit();
 
         return {
-
             pass: selectedPass,
-
-            balanceAfter: wallet.balance
-
+            balanceAfter
         };
+    } catch (error) {
+        if (
+            error instanceof InsufficientBalanceError ||
+            error.name === "InsufficientBalanceError"
+        ) {
+            throw error;
+        }
 
-
-    });
-
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 }
+
+// =======================================
+// Transaction history
+// =======================================
 
 async function getTransactionHistory(userId) {
     const numericUserId = normalizeUserId(userId);
-    const transactions = await readJson('wallet_transactions.json');
 
-    return transactions
-        .filter((transaction) => transaction.userId === numericUserId)
-        .sort((first, second) => new Date(second.timestamp) - new Date(first.timestamp));
-}
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            transactionId,
+            userId,
+            type,
+            amount,
+            balanceAfter,
+            status,
+            timestamp
+        FROM wallet_transactions
+        WHERE userId = ?
+        ORDER BY timestamp DESC, transactionId DESC
+        `,
+        [numericUserId]
+    );
 
-function createTransaction(existingTransactions, transactionData) {
-    const nextTransactionId = existingTransactions.reduce((highestId, transaction) => {
-        return Math.max(highestId, Number(transaction.transactionId || 0));
-    }, 0) + 1;
-
-    return {
-        transactionId: nextTransactionId,
-        userId: transactionData.userId,
-        type: transactionData.type,
-        amount: Number(Number(transactionData.amount).toFixed(2)),
-        balanceAfter: Number(Number(transactionData.balanceAfter).toFixed(2)),
-        status: transactionData.status,
-        timestamp: new Date().toISOString()
-    };
+    return rows.map((transaction) => ({
+        ...transaction,
+        amount: Number(transaction.amount),
+        balanceAfter: Number(transaction.balanceAfter)
+    }));
 }
 
 module.exports = {

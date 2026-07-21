@@ -1,123 +1,193 @@
-const fs = require("fs").promises;
-const path = require("path");
-
-const bikeFile = path.join(__dirname, "../data/bikes.json");
+const pool = require("../config/database");
 
 // ==============================
-// Read bikes.json
+// Get all bikes
 // ==============================
 async function getAllBikes() {
-    const data = await fs.readFile(bikeFile, "utf8");
-    return JSON.parse(data);
+    const [rows] = await pool.execute(`
+        SELECT
+            id,
+            name,
+            description,
+            price,
+            status,
+            image
+        FROM bikes
+        ORDER BY id
+    `);
+
+    return rows;
 }
 
 // ==============================
 // Find bike by ID
 // ==============================
 async function getBikeById(id) {
-    const bikes = await getAllBikes();
-
-    return bikes.find(
-        bike => bike.id === Number(id)
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            id,
+            name,
+            description,
+            price,
+            status,
+            image
+        FROM bikes
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [id]
     );
+
+    return rows[0] || null;
 }
 
 // ==============================
-// Save bikes.json
-// ==============================
-async function saveBikes(bikes) {
-    await fs.writeFile(
-        bikeFile,
-        JSON.stringify(bikes, null, 2)
-    );
-}
-
-// ==============================
-// Add Bike
+// Add bike
 // ==============================
 async function addBike(bikeData) {
+    const name = bikeData.name?.trim();
+    const description = bikeData.description?.trim() || "";
+    const price = Number(bikeData.price);
+    const image =
+        bikeData.image?.trim() || "/images/default-bike.jpg";
 
-    const bikes = await getAllBikes();
+    if (!name) {
+        throw new Error("Bike name is required.");
+    }
 
-    const newBike = {
-        id: bikes.length
-            ? Math.max(...bikes.map(b => b.id)) + 1
-            : 1,
+    if (!Number.isFinite(price) || price < 0) {
+        throw new Error("Bike price must be a valid number.");
+    }
 
-        name: bikeData.name,
-        description: bikeData.description,
-        price: Number(bikeData.price),
-        status: "Available",
-        image: bikeData.image || "/images/default-bike.jpg"
-    };
+    const [result] = await pool.execute(
+        `
+        INSERT INTO bikes (
+            name,
+            description,
+            price,
+            status,
+            image
+        )
+        VALUES (?, ?, ?, ?, ?)
+        `,
+        [
+            name,
+            description,
+            price,
+            "Available",
+            image
+        ]
+    );
 
-    bikes.push(newBike);
-
-    await saveBikes(bikes);
-
-    return newBike;
+    return getBikeById(result.insertId);
 }
 
 // ==============================
-// Update Bike
+// Update bike
 // ==============================
 async function updateBike(id, bikeData) {
+    const name = bikeData.name?.trim();
+    const description = bikeData.description?.trim() || "";
+    const price = Number(bikeData.price);
+    const status = bikeData.status?.trim() || "Available";
+    const image =
+        bikeData.image?.trim() || "/images/default-bike.jpg";
 
-    const bikes = await getAllBikes();
+    if (!name) {
+        throw new Error("Bike name is required.");
+    }
 
-    const bike = bikes.find(
-        b => b.id === Number(id)
+    if (!Number.isFinite(price) || price < 0) {
+        throw new Error("Bike price must be a valid number.");
+    }
+
+    const [result] = await pool.execute(
+        `
+        UPDATE bikes
+        SET
+            name = ?,
+            description = ?,
+            price = ?,
+            status = ?,
+            image = ?
+        WHERE id = ?
+        `,
+        [
+            name,
+            description,
+            price,
+            status,
+            image,
+            id
+        ]
     );
 
-    if (!bike) {
+    if (result.affectedRows === 0) {
         throw new Error("Bike not found.");
     }
 
-    bike.name = bikeData.name;
-    bike.description = bikeData.description;
-    bike.price = Number(bikeData.price);
-    bike.status = bikeData.status;
-    bike.image = bikeData.image;
-
-    await saveBikes(bikes);
-
-    return bike;
+    return getBikeById(id);
 }
 
 // ==============================
-// Delete Bike
+// Delete bike
 // ==============================
 async function deleteBike(id) {
+    try {
+        const [result] = await pool.execute(
+            `
+            DELETE FROM bikes
+            WHERE id = ?
+            `,
+            [id]
+        );
 
-    const bikes = await getAllBikes();
+        if (result.affectedRows === 0) {
+            throw new Error("Bike not found.");
+        }
 
-    const updatedBikes = bikes.filter(
-        bike => bike.id !== Number(id)
-    );
+        return true;
+    } catch (error) {
+        if (error.code === "ER_ROW_IS_REFERENCED_2") {
+            throw new Error(
+                "This bike cannot be deleted because it has rental records."
+            );
+        }
 
-    await saveBikes(updatedBikes);
+        throw error;
+    }
 }
 
 // ==============================
-// Change Bike Status
+// Change bike status
 // ==============================
 async function updateBikeStatus(id, status) {
+    const allowedStatuses = [
+        "Available",
+        "Rented",
+        "Maintenance",
+        "Unavailable"
+    ];
 
-    const bikes = await getAllBikes();
+    if (!allowedStatuses.includes(status)) {
+        throw new Error("Invalid bike status.");
+    }
 
-    const bike = bikes.find(
-        b => b.id === Number(id)
+    const [result] = await pool.execute(
+        `
+        UPDATE bikes
+        SET status = ?
+        WHERE id = ?
+        `,
+        [status, id]
     );
 
-    if (!bike) {
+    if (result.affectedRows === 0) {
         throw new Error("Bike not found.");
     }
 
-    bike.status = status;
-
-    await saveBikes(bikes);
-
-    return bike;
+    return getBikeById(id);
 }
 
 module.exports = {

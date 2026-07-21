@@ -1,149 +1,111 @@
-const fs = require('fs').promises;
-const path = require('path');
-
-const DATA_DIRECTORY = path.join(__dirname, '..', 'data');
-
-const USERS_FILE = path.join(DATA_DIRECTORY, 'user.json');
-const WALLETS_FILE = path.join(DATA_DIRECTORY, 'wallets.json');
-const TRANSACTIONS_FILE = path.join(
-    DATA_DIRECTORY,
-    'wallet_transactions.json'
-);
-
-async function readJsonFile(filePath) {
-    try {
-        const contents = await fs.readFile(filePath, 'utf8');
-        return JSON.parse(contents);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            return [];
-        }
-
-        throw error;
-    }
-}
-
-function extractArray(data, possibleKeys = []) {
-    if (Array.isArray(data)) {
-        return data;
-    }
-
-    for (const key of possibleKeys) {
-        if (Array.isArray(data?.[key])) {
-            return data[key];
-        }
-    }
-
-    return [];
-}
+const pool = require("../config/database");
 
 async function getAdminWalletDashboard() {
-    const [usersData, walletsData, transactionsData] =
-        await Promise.all([
-            readJsonFile(USERS_FILE),
-            readJsonFile(WALLETS_FILE),
-            readJsonFile(TRANSACTIONS_FILE)
-        ]);
+    const [walletRows] = await pool.execute(`
+        SELECT
+            u.id AS userId,
+            u.name,
+            u.email,
+            COALESCE(w.balance, 0) AS balance,
+            COUNT(wt.transactionId) AS transactionCount
+        FROM users u
+        LEFT JOIN wallets w
+            ON w.userId = u.id
+        LEFT JOIN wallet_transactions wt
+            ON wt.userId = u.id
+        WHERE LOWER(u.role) = 'member'
+        GROUP BY
+            u.id,
+            u.name,
+            u.email,
+            w.balance
+        ORDER BY u.id
+    `);
 
-    const users = extractArray(usersData, ['users']);
-    const wallets = extractArray(walletsData, ['wallets']);
-    const transactions = extractArray(
-        transactionsData,
-        ['transactions']
-    );
+    const [transactionRows] = await pool.execute(`
+        SELECT
+            wt.transactionId,
+            wt.userId,
+            wt.type,
+            wt.amount,
+            wt.balanceAfter,
+            wt.status,
+            wt.timestamp,
+            COALESCE(u.name, 'Unknown User') AS userName,
+            COALESCE(u.email, '-') AS userEmail
+        FROM wallet_transactions wt
+        LEFT JOIN users u
+            ON u.id = wt.userId
+        ORDER BY
+            wt.timestamp DESC,
+            wt.transactionId DESC
+    `);
 
-    const walletRows = users
-        .filter((user) =>
-            String(user.role || '').toLowerCase() === 'member'
-        )
-        .map((user) => {
-            const wallet = wallets.find(
-                (item) =>
-                    String(item.userId) === String(user.id)
-            );
+    const [statisticsRows] = await pool.execute(`
+        SELECT
+            (
+                SELECT COUNT(*)
+                FROM users
+                WHERE LOWER(role) = 'member'
+            ) AS totalMembers,
 
-            const userTransactions = transactions.filter(
-                (transaction) =>
-                    String(transaction.userId) === String(user.id)
-            );
+            (
+                SELECT COALESCE(SUM(w.balance), 0)
+                FROM wallets w
+                INNER JOIN users u
+                    ON u.id = w.userId
+                WHERE LOWER(u.role) = 'member'
+            ) AS totalWalletBalance,
 
-            return {
-                userId: user.id,
-                name: user.name || user.username || 'Unknown Member',
-                email: user.email || '-',
-                balance: Number(wallet?.balance || 0),
-                transactionCount: userTransactions.length
-            };
-        });
+            (
+                SELECT COUNT(*)
+                FROM wallet_transactions
+            ) AS totalTransactions,
 
-    const totalBalance = walletRows.reduce(
-        (sum, wallet) => sum + wallet.balance,
-        0
-    );
+            (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM wallet_transactions
+                WHERE
+                    LOWER(type) LIKE '%top up%'
+                    OR LOWER(type) LIKE '%top-up%'
+            ) AS totalTopUps,
 
-    const totalTopUps = transactions
-        .filter((transaction) =>
-            String(transaction.type || '')
-                .toLowerCase()
-                .includes('top')
-        )
-        .reduce(
-            (sum, transaction) =>
-                sum + Number(transaction.amount || 0),
-            0
-        );
+            (
+                SELECT COALESCE(SUM(ABS(amount)), 0)
+                FROM wallet_transactions
+                WHERE
+                    LOWER(type) LIKE '%pass%'
+                    OR LOWER(type) LIKE '%trip%'
+                    OR LOWER(type) LIKE '%rental%'
+                    OR LOWER(type) LIKE '%spend%'
+            ) AS totalSpending
+    `);
 
-    const totalSpending = transactions
-        .filter((transaction) => {
-            const type = String(
-                transaction.type || ''
-            ).toLowerCase();
-
-            return (
-                type.includes('pass') ||
-                type.includes('trip') ||
-                type.includes('rental') ||
-                type.includes('spend')
-            );
-        })
-        .reduce(
-            (sum, transaction) =>
-                sum + Math.abs(Number(transaction.amount || 0)),
-            0
-        );
-
-    const enrichedTransactions = transactions
-        .map((transaction) => {
-            const user = users.find(
-                (item) =>
-                    String(item.id) ===
-                    String(transaction.userId)
-            );
-
-            return {
-                ...transaction,
-                userName:
-                    user?.name ||
-                    user?.username ||
-                    'Unknown User',
-                userEmail: user?.email || '-'
-            };
-        })
-        .sort(
-            (a, b) =>
-                new Date(b.timestamp || b.date || 0) -
-                new Date(a.timestamp || a.date || 0)
-        );
+    const statistics = statisticsRows[0];
 
     return {
-        wallets: walletRows,
-        transactions: enrichedTransactions,
+        wallets: walletRows.map((wallet) => ({
+            ...wallet,
+            balance: Number(wallet.balance),
+            transactionCount: Number(wallet.transactionCount)
+        })),
+
+        transactions: transactionRows.map((transaction) => ({
+            ...transaction,
+            amount: Number(transaction.amount),
+            balanceAfter: Number(transaction.balanceAfter)
+        })),
+
         statistics: {
-            totalMembers: walletRows.length,
-            totalWalletBalance: totalBalance,
-            totalTransactions: transactions.length,
-            totalTopUps,
-            totalSpending
+            totalMembers: Number(statistics.totalMembers),
+            totalWalletBalance: Number(
+                statistics.totalWalletBalance
+            ),
+            totalTransactions: Number(
+                statistics.totalTransactions
+            ),
+            totalTopUps: Number(statistics.totalTopUps),
+            totalSpending: Number(statistics.totalSpending)
         }
     };
 }
