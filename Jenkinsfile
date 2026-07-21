@@ -6,38 +6,38 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm ci'
+                sh 'npm ci'
             }
         }
 
         stage('Test') {
             steps {
-                bat 'npm test'
+                sh 'npm test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t bike-app:%BUILD_NUMBER% -t bike-app:latest ."
+                sh "docker build -t bike-app:${env.BUILD_NUMBER} -t bike-app:latest ."
             }
         }
 
         stage('Stop Existing Container') {
             steps {
-                bat 'docker rm -f bike-container || exit /b 0'
+                sh 'docker rm -f bike-container || true'
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                bat "docker run -d -p 3000:3000 --name bike-container bike-app:%BUILD_NUMBER%"
+                sh "docker run -d -p 3000:3000 --name bike-container bike-app:${env.BUILD_NUMBER}"
             }
         }
 
         stage('Health Check') {
             steps {
-                bat 'timeout /t 5'
-                bat 'curl -f http://localhost:3000/login.html || exit /b 1'
+                sh 'sleep 5'
+                sh 'curl -f http://localhost:3000/login.html || exit 1'
             }
         }
 
