@@ -1,93 +1,188 @@
 const express = require("express");
 const router = express.Router();
 
-const rewardsController = require("../controllers/rewardsController");
-
-// =======================================
-// Auth Middleware (same pattern as routes.js)
-// =======================================
+const rewardsController = require(
+    "../controllers/rewardsController"
+);
 
 function requireLogin(req, res, next) {
     if (!req.session.user) {
         return res.redirect("/login.html");
     }
+
     next();
 }
 
-// =======================================
-// Rewards Page
-// =======================================
+router.get(
+    "/rewards",
+    requireLogin,
+    async (req, res) => {
+        try {
+            const user = req.session.user;
 
-router.get("/rewards", requireLogin, (req, res) => {
-    const user = req.session.user;
-    const record = rewardsController.getOrCreateUserRewards(user);
-    const transactions = rewardsController.getUserTransactions(user.id);
+            const record =
+                await rewardsController
+                    .getOrCreateUserRewards(user);
 
-    const nextReward = 50;
-    const progress = Math.min((record.points / nextReward) * 100, 100);
+            const transactions =
+                await rewardsController
+                    .getUserTransactions(user.id);
 
-    res.render("rewards", {
-        user,
-        rewards: record,
-        transactions,
-        progress,
-        nextReward
-    });
-});
+            const nextReward = 50;
 
-// =======================================
-// Ride Simulator (calculate only, no balance change)
-// =======================================
+            const progress = Math.min(
+                (record.points / nextReward) * 100,
+                100
+            );
 
-router.post("/api/rewards/calculate", requireLogin, (req, res) => {
-    const minutes = parseFloat(req.body.minutes);
+            res.render("rewards", {
+                user,
+                rewards: record,
+                transactions,
+                progress,
+                nextReward
+            });
+        } catch (error) {
+            console.error(
+                "Unable to load rewards:",
+                error
+            );
 
-    if (isNaN(minutes) || minutes <= 0) {
-        return res.status(400).json({ success: false, error: "Invalid duration." });
+            res.status(500).send(
+                "Unable to load rewards."
+            );
+        }
     }
+);
 
-    const result = rewardsController.calculatePoints(minutes);
-    res.json({ rideMinutes: minutes, pointsEarned: result.points, calculationResult: result });
-});
+router.post(
+    "/api/rewards/calculate",
+    requireLogin,
+    (req, res) => {
+        const minutes = Number(req.body.minutes);
 
-// =======================================
-// Ride Complete (adds points to balance - for tracking integration)
-// =======================================
+        if (!Number.isFinite(minutes) || minutes <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid duration."
+            });
+        }
 
-router.post("/api/rewards/ride-complete", requireLogin, (req, res) => {
-    const { minutes } = req.body;
+        const result =
+            rewardsController.calculatePoints(minutes);
 
-    if (!minutes || typeof minutes !== "number" || minutes <= 0) {
-        return res.status(400).json({ success: false, error: "Invalid duration." });
+        res.json({
+            rideMinutes: minutes,
+            pointsEarned: result.points,
+            calculationResult: result
+        });
     }
+);
 
-    const result = rewardsController.addRidePoints(req.session.user, minutes);
-    res.json(result);
-});
+router.post(
+    "/api/rewards/ride-complete",
+    requireLogin,
+    async (req, res) => {
+        try {
+            const minutes = Number(req.body.minutes);
 
-// =======================================
-// Referral Submit
-// =======================================
+            if (
+                !Number.isFinite(minutes) ||
+                minutes <= 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Invalid duration."
+                });
+            }
 
-router.post("/api/rewards/referral/submit", requireLogin, (req, res) => {
-    const { referralCode } = req.body;
+            const result =
+                await rewardsController.addRidePoints(
+                    req.session.user,
+                    minutes
+                );
 
-    if (!referralCode) {
-        return res.status(400).json({ success: false, message: "Please enter a referral code." });
+            res.json(result);
+        } catch (error) {
+            console.error(
+                "Ride reward error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to add ride points."
+            });
+        }
     }
+);
 
-    const result = rewardsController.processReferral(req.session.user, referralCode);
-    res.json(result);
-});
+router.post(
+    "/api/rewards/referral/submit",
+    requireLogin,
+    async (req, res) => {
+        try {
+            const { referralCode } = req.body;
 
-// =======================================
-// Redeem
-// =======================================
+            if (!referralCode) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        "Please enter a referral code."
+                });
+            }
 
-router.post("/api/rewards/redeem", requireLogin, (req, res) => {
-    const rewardPoints = parseInt(req.body.points);
-    const result = rewardsController.redeem(req.session.user, rewardPoints);
-    res.json(result);
-});
+            const result =
+                await rewardsController.processReferral(
+                    req.session.user,
+                    referralCode
+                );
+
+            res.json(result);
+        } catch (error) {
+            console.error(
+                "Referral error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to process referral."
+            });
+        }
+    }
+);
+
+router.post(
+    "/api/rewards/redeem",
+    requireLogin,
+    async (req, res) => {
+        try {
+            const rewardPoints =
+                Number(req.body.points);
+
+            const result =
+                await rewardsController.redeem(
+                    req.session.user,
+                    rewardPoints
+                );
+
+            res.json(result);
+        } catch (error) {
+            console.error(
+                "Reward redemption error:",
+                error
+            );
+
+            res.status(500).json({
+                success: false,
+                message:
+                    "Unable to redeem reward."
+            });
+        }
+    }
+);
 
 module.exports = router;

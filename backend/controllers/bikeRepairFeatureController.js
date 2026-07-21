@@ -1,23 +1,4 @@
-const fs = require("fs");
-const path = require("path");
-
-const reportsFile = path.join(__dirname, "../data/bikeRepairReports.json");
-
-function readReports() {
-    if (!fs.existsSync(reportsFile)) {
-        return [];
-    }
-
-    const data = fs.readFileSync(reportsFile, "utf8");
-    return JSON.parse(data);
-}
-
-function saveReports(reports) {
-    fs.writeFileSync(
-        reportsFile,
-        JSON.stringify(reports, null, 4)
-    );
-}
+const pool = require("../config/database");
 
 // =======================================
 // Show Repair Form
@@ -33,73 +14,178 @@ exports.showRepairPage = (req, res) => {
 // Submit Repair Report
 // =======================================
 
-exports.submitRepairReport = (req, res) => {
+exports.submitRepairReport = async (req, res) => {
+    try {
+        const {
+            bikeStation,
+            bikeID,
+            issueType,
+            description
+        } = req.body;
 
-    const {
-        bikeStation,
-        bikeID,
-        issueType,
-        description
-    } = req.body;
+        if (
+            !bikeStation ||
+            !bikeID ||
+            !issueType
+        ) {
+            return res.status(400).send(
+                "Bike station, bike ID and issue type are required."
+            );
+        }
 
-    const reports = readReports();
+        const reportDate =
+            new Date().toLocaleString("en-SG");
 
-    const newReport = {
-        id: Date.now(),
-        bikeStation,
-        bikeID,
-        issueType,
-        description,
-        status: "Pending",
-        date: new Date().toLocaleString()
-    };
+        const [result] = await pool.execute(
+            `
+            INSERT INTO bike_repair_reports (
+                bikeStation,
+                bikeID,
+                issueType,
+                description,
+                status,
+                reportDate
+            )
+            VALUES (?, ?, ?, ?, 'Pending', ?)
+            `,
+            [
+                bikeStation.trim(),
+                bikeID.trim(),
+                issueType.trim(),
+                description?.trim() || "",
+                reportDate
+            ]
+        );
 
-    reports.push(newReport);
+        const newReport = {
+            id: result.insertId,
+            bikeStation: bikeStation.trim(),
+            bikeID: bikeID.trim(),
+            issueType: issueType.trim(),
+            description:
+                description?.trim() || "",
+            status: "Pending",
+            date: reportDate
+        };
 
-    saveReports(reports);
+        res.render("bikeRepairSubmittedPage", {
+            report: newReport,
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error(
+            "Submit repair report error:",
+            error
+        );
 
-    res.render("bikeRepairSubmittedPage", {
-        report: newReport,
-        user: req.session.user
-    });
+        res.status(500).send(
+            "Unable to submit repair report."
+        );
+    }
 };
 
 // =======================================
 // Admin Page
 // =======================================
 
-exports.showAdminPage = (req, res) => {
-
-    if (!req.session.user || req.session.user.role !== "Admin") {
-        return res.status(403).send("Access Denied");
+exports.showAdminPage = async (req, res) => {
+    if (
+        !req.session.user ||
+        String(req.session.user.role).toLowerCase()
+            !== "admin"
+    ) {
+        return res.status(403).send(
+            "Access Denied"
+        );
     }
 
-    const reports = readReports();
+    try {
+        const [rows] = await pool.execute(
+            `
+            SELECT
+                id,
+                bikeStation,
+                bikeID,
+                issueType,
+                description,
+                status,
+                reportDate AS \`date\`
+            FROM bike_repair_reports
+            ORDER BY id DESC
+            `
+        );
 
-    res.render("bikeRepairAdminPage", {
-        reports,
-        user: req.session.user
-    });
+        res.render("bikeRepairAdminPage", {
+            reports: rows,
+            user: req.session.user
+        });
+    } catch (error) {
+        console.error(
+            "Load repair reports error:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to load repair reports."
+        );
+    }
 };
 
 // =======================================
 // Update Repair Status
 // =======================================
 
-exports.updateRepairStatus = (req, res) => {
-
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const reports = readReports();
-
-    const report = reports.find(r => r.id == id);
-
-    if (report) {
-        report.status = status;
+exports.updateRepairStatus = async (req, res) => {
+    if (
+        !req.session.user ||
+        String(req.session.user.role).toLowerCase()
+            !== "admin"
+    ) {
+        return res.status(403).send(
+            "Access Denied"
+        );
     }
 
-    saveReports(reports);
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
 
-    res.redirect("/repair/admin");
+        const allowedStatuses = [
+            "Pending",
+            "In Progress",
+            "Resolved"
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).send(
+                "Invalid repair status."
+            );
+        }
+
+        const [result] = await pool.execute(
+            `
+            UPDATE bike_repair_reports
+            SET status = ?
+            WHERE id = ?
+            `,
+            [status, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).send(
+                "Repair report not found."
+            );
+        }
+
+        res.redirect("/repair/admin");
+    } catch (error) {
+        console.error(
+            "Update repair status error:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to update repair status."
+        );
+    }
 };

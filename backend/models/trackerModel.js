@@ -1,59 +1,121 @@
-const { readJson, writeJson } = require('./jsonFileModel');
-
-let trackerWriteQueue = Promise.resolve();
+const pool = require("../config/database");
 
 function normalizeUserId(userId) {
-    return Number(userId);
+    const numericUserId = Number(userId);
+
+    if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+        throw new Error("Invalid user ID.");
+    }
+
+    return numericUserId;
 }
 
-function runTrackerWrite(task) {
-    trackerWriteQueue = trackerWriteQueue.then(task, task);
-    return trackerWriteQueue;
+function normalizeTracker(entry) {
+    if (!entry) {
+        return null;
+    }
+
+    return {
+        ...entry,
+        userId: Number(entry.userId),
+        distance: Number(entry.distance) || 0,
+        rides: Number(entry.rides) || 0
+    };
 }
 
 async function getAllTrackers() {
-    return await readJson('tracker.json', []);
+    const [rows] = await pool.execute(`
+        SELECT
+            userId,
+            userName,
+            city,
+            bikeName,
+            distance,
+            rides,
+            lastRideAt
+        FROM tracker
+        ORDER BY distance DESC, rides DESC
+    `);
+
+    return rows.map(normalizeTracker);
 }
 
 async function getTrackerByUser(userId) {
-    const trackers = await getAllTrackers();
-    const normalizedUserId = normalizeUserId(userId);
-    return trackers.find((entry) => entry.userId === normalizedUserId) || null;
+    const numericUserId = normalizeUserId(userId);
+
+    const [rows] = await pool.execute(
+        `
+        SELECT
+            userId,
+            userName,
+            city,
+            bikeName,
+            distance,
+            rides,
+            lastRideAt
+        FROM tracker
+        WHERE userId = ?
+        LIMIT 1
+        `,
+        [numericUserId]
+    );
+
+    return normalizeTracker(rows[0]);
 }
 
 async function saveRideDistance(user, distance, bikeName = null) {
-    return runTrackerWrite(async () => {
-        const trackers = await getAllTrackers();
-        const normalizedUserId = normalizeUserId(user.id || user.userId);
+    const numericUserId = normalizeUserId(
+        user.id || user.userId
+    );
 
-        let trackerEntry = trackers.find(
-            (entry) => entry.userId === normalizedUserId
-        );
+    const rideDistance = Number(distance);
 
-        if (!trackerEntry) {
-            trackerEntry = {
-                userId: normalizedUserId,
-                userName: user.name || user.userName || 'Unknown Rider',
-                city: user.city || 'Your City',
-                bikeName: bikeName || 'Unknown Bike',
-                distance: 0,
-                rides: 0,
-                lastRideAt: null
-            };
-            trackers.push(trackerEntry);
-        }
+    if (!Number.isFinite(rideDistance) || rideDistance < 0) {
+        throw new Error("Invalid distance.");
+    }
 
-        trackerEntry.distance = Number(
-            (Number(trackerEntry.distance) + Number(distance)).toFixed(2)
-        );
-        trackerEntry.bikeName = trackerEntry.bikeName || bikeName || 'Unknown Bike';
-        trackerEntry.rides = (trackerEntry.rides || 0) + 1;
-        trackerEntry.lastRideAt = new Date().toISOString();
+    const userName =
+        user.name || user.userName || "Unknown Rider";
 
-        await writeJson('tracker.json', trackers);
+    const city = user.city || "Your City";
 
-        return trackerEntry;
-    });
+    const selectedBikeName =
+        bikeName || "Unknown Bike";
+
+    await pool.execute(
+        `
+        INSERT INTO tracker (
+            userId,
+            userName,
+            city,
+            bikeName,
+            distance,
+            rides,
+            lastRideAt
+        )
+        VALUES (?, ?, ?, ?, ?, 1, NOW(3))
+        ON DUPLICATE KEY UPDATE
+            userName = VALUES(userName),
+            city = VALUES(city),
+            bikeName = CASE
+                WHEN VALUES(bikeName) = 'Unknown Bike'
+                    THEN bikeName
+                ELSE VALUES(bikeName)
+            END,
+            distance = ROUND(distance + VALUES(distance), 2),
+            rides = rides + 1,
+            lastRideAt = NOW(3)
+        `,
+        [
+            numericUserId,
+            userName,
+            city,
+            selectedBikeName,
+            rideDistance
+        ]
+    );
+
+    return getTrackerByUser(numericUserId);
 }
 
 module.exports = {
