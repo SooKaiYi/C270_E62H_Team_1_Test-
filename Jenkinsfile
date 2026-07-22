@@ -23,8 +23,17 @@ pipeline {
         STAGING_CONTAINER = 'bike-staging'
         PRODUCTION_CONTAINER = 'bike-production'
 
-        STAGING_URL = 'http://localhost:3001'
-        PRODUCTION_URL = 'http://localhost:3000'
+        // Short-lived container used ONLY for the API Tests stage below,
+        // separate from the real Staging/Production containers.
+        API_TEST_CONTAINER = 'bike-api-test'
+        API_TEST_PORT = '3002'
+
+        // NOTE: these use host.docker.internal instead of localhost, since
+        // curl/newman run INSIDE the Jenkins container, not on the host --
+        // localhost inside that container is not the same localhost as the
+        // one bike-staging/bike-production actually publish their ports on.
+        STAGING_URL = 'http://host.docker.internal:3001'
+        PRODUCTION_URL = 'http://host.docker.internal:3000'
     }
 
     stages {
@@ -37,29 +46,29 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm ci'
+                sh 'npm ci'
             }
         }
-        
+
         stage('Code Quality Checks') {
             steps {
                 echo 'Running ESLint (Code Quality)...'
-                bat 'npm run lint'
+                sh 'npm run lint'
 
                 echo 'Running Prettier (Formatting Check)...'
-                bat 'npm run format:check'
+                sh 'npm run format:check'
             }
         }
 
         stage('Code Quality - ESLint') {
             steps {
-                bat 'npx eslint .'
+                sh 'npx eslint .'
             }
         }
 
         stage('Automated Tests') {
             steps {
-                bat 'npm test'
+                sh 'npm test'
             }
         }
 
@@ -74,24 +83,49 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat '''
-                docker build ^
-                  -t %IMAGE_NAME%:%IMAGE_TAG% ^
-                  -t %IMAGE_NAME%:latest .
-                '''
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
+            }
+        }
+
+        stage('API Tests') {
+            steps {
+                sh "docker rm -f ${API_TEST_CONTAINER} || true"
+
+                sh "docker run -d -p ${API_TEST_PORT}:3000 --name ${API_TEST_CONTAINER} ${IMAGE_NAME}:${IMAGE_TAG}"
+
+                sh 'sleep 5'
+
+                echo 'Smoke check - is the container even responding?'
+                sh "curl -f http://host.docker.internal:${API_TEST_PORT}/login.html || exit 1"
+
+                echo 'Running full API test suite via Newman...'
+                sh """
+                    npx newman run tests/api/CityScoot-API-Tests.postman_collection.json \
+                      --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
+                      --env-var testEmail=\$API_TEST_EMAIL \
+                      --env-var testPassword=\$API_TEST_PASSWORD \
+                      --reporters cli,junit \
+                      --reporter-junit-export newman-report.xml
+                """
+            }
+            post {
+                always {
+                    sh "docker rm -f ${API_TEST_CONTAINER} || true"
+                    junit allowEmptyResults: true, testResults: 'newman-report.xml'
+                }
             }
         }
 
         stage('Deploy to Staging') {
             steps {
-                bat '''
-                docker rm -f %STAGING_CONTAINER% 2>nul || echo No existing staging container
+                sh """
+                    docker rm -f ${STAGING_CONTAINER} 2>/dev/null || echo No existing staging container
 
-                docker run -d ^
-                  -p 3001:3000 ^
-                  --name %STAGING_CONTAINER% ^
-                  %IMAGE_NAME%:%IMAGE_TAG%
-                '''
+                    docker run -d \
+                      -p 3001:3000 \
+                      --name ${STAGING_CONTAINER} \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
 
@@ -101,11 +135,7 @@ pipeline {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
 
-                        bat '''
-                        powershell -Command ^
-                        "$response = Invoke-WebRequest -Uri '%STAGING_URL%' -UseBasicParsing; ^
-                        if ($response.StatusCode -ne 200) { exit 1 }"
-                        '''
+                        sh "curl -f ${STAGING_URL}/login.html || exit 1"
                     }
                 }
             }
@@ -122,14 +152,14 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                bat '''
-                docker rm -f %PRODUCTION_CONTAINER% 2>nul || echo No existing production container
+                sh """
+                    docker rm -f ${PRODUCTION_CONTAINER} 2>/dev/null || echo No existing production container
 
-                docker run -d ^
-                  -p 3000:3000 ^
-                  --name %PRODUCTION_CONTAINER% ^
-                  %IMAGE_NAME%:%IMAGE_TAG%
-                '''
+                    docker run -d \
+                      -p 3000:3000 \
+                      --name ${PRODUCTION_CONTAINER} \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
 
@@ -139,11 +169,7 @@ pipeline {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
 
-                        bat '''
-                        powershell -Command ^
-                        "$response = Invoke-WebRequest -Uri '%PRODUCTION_URL%' -UseBasicParsing; ^
-                        if ($response.StatusCode -ne 200) { exit 1 }"
-                        '''
+                        sh "curl -f ${PRODUCTION_URL}/login.html || exit 1"
                     }
                 }
             }

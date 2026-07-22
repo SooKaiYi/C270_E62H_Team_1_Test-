@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "CityScoot API Tests",
+    "description": "Smoke + API tests for the CityScoot Rewards/Profile API, run via Newman in the Jenkins pipeline's 'API Tests' stage.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Smoke - Login Page Loads",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/login.html"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response is HTML', function () {",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/html');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login succeeds with status 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response confirms success', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.success).to.be.true;",
+              "});",
+              "// Newman keeps the session cookie automatically for the rest of this run."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Get Rewards Page (Authenticated)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/rewards"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 (not redirected to login)', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Page actually contains the Rewards content', function () {",
+              "    pm.expect(pm.response.text()).to.include('Rewards');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Calculate Ride Points",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/rewards/calculate",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"minutes\": 65 }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('65 minutes correctly earns 15 points (the 60+ min minimum rule)', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.pointsEarned).to.eql(15);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Redeem - Insufficient Balance Is Rejected",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/rewards/redeem",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"points\": 100000 }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 (a graceful rejection, not a crash)', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response correctly reports failure', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.success).to.be.false;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 - Get Profile Page (Authenticated)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/profile"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 (not redirected to login)', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 - Auth Guard - Rejects Unauthenticated Access",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/rewards",
+        "header": [{ "key": "Cookie", "value": "" }]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Clear cookies just for this one request to simulate a logged-out visitor.",
+              "pm.cookies.clear ? pm.cookies.clear() : null;"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Unauthenticated request is redirected, not shown the page', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([302, 200]);",
+              "    if (pm.response.code === 200) {",
+              "        pm.expect(pm.response.text()).to.include('login');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
