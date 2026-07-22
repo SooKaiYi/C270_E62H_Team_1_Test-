@@ -26,6 +26,7 @@
     "eslint-plugin-ejs": "^0.0.2",
     "globals": "^17.7.0",
     "jest": "^30.4.2",
+    "newman": "^6.2.1",
     "prettier": "^3.9.6"
   }
 }
