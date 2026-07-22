@@ -5,7 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "test": "echo \"No tests specified\""
+    "lint": "eslint .",
+    "format:check": "prettier --check \"**/*.{js,ejs,json,css}\"",
+    "format": "prettier --write \"**/*.{js,ejs,json,css}\"",
+    "test": "jest --runInBand",
+    "test:unit": "jest tests/unit --runInBand",
+    "test:coverage": "jest tests/unit --coverage --runInBand"
   },
   "keywords": [],
   "author": "",
