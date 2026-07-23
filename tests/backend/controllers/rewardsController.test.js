@@ -75,7 +75,7 @@ describe('getOrCreateUserRewards', () => {
     });
 
     test('returns the same record on a second call, does not reset points', async () => {
-        const first = await rewardsController.getOrCreateUserRewards(member);
+        await rewardsController.getOrCreateUserRewards(member);
         db._store().rewards.find((r) => r.userId === member.id).points = 42;
 
         const second = await rewardsController.getOrCreateUserRewards(member);
