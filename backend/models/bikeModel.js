@@ -136,9 +136,9 @@ async function deleteBike(id) {
   } catch (error) {
     if (error.code === 'ER_ROW_IS_REFERENCED_2') {
       throw new Error(
-  'This bike cannot be deleted because it has rental records.',
-  { cause: error }
-);
+        'This bike cannot be deleted because it has rental records.',
+        { cause: error }
+      );
     }
 
     throw error;
