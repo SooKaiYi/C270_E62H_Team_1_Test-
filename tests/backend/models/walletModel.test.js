@@ -19,7 +19,7 @@ describe('getOrCreateWallet', () => {
     });
 
     test('returns the same wallet on a second call, does not reset it', async () => {
-        const first = await walletModel.getOrCreateWallet(2);
+        await walletModel.getOrCreateWallet(2);
         db._store().wallets.find((w) => w.userId === 2).balance = 100;
         const second = await walletModel.getOrCreateWallet(2);
         expect(second.balance).toBe(100);
