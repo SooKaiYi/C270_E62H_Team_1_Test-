@@ -89,6 +89,10 @@ pipeline {
 
         stage('API Tests') {
             steps {
+                withCredentials([
+                    string(credentialsId: 'api-test-email', variable: 'API_TEST_EMAIL'),
+                    string(credentialsId: 'api-test-password', variable: 'API_TEST_PASSWORD')
+                ]) {
                 sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
                 sh "docker run -d -p ${API_TEST_PORT}:3000 --name ${API_TEST_CONTAINER} ${IMAGE_NAME}:${IMAGE_TAG}"
