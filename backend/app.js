@@ -5,8 +5,7 @@ const mapRoutes = require('./routes/mapRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 
 const app = express();
-// Add an unused variable (ESLint will catch this)
-const badTestVariable = 'this is unused';
+
 // Read form and JSON data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

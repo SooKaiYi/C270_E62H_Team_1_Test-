@@ -89,24 +89,29 @@ pipeline {
 
         stage('API Tests') {
             steps {
-                sh "docker rm -f ${API_TEST_CONTAINER} || true"
+                withCredentials([
+                    string(credentialsId: 'api-test-email', variable: 'API_TEST_EMAIL'),
+                    string(credentialsId: 'api-test-password', variable: 'API_TEST_PASSWORD')
+                ]) {
+                    sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
-                sh "docker run -d -p ${API_TEST_PORT}:3000 --name ${API_TEST_CONTAINER} ${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "docker run -d -p ${API_TEST_PORT}:3000 --name ${API_TEST_CONTAINER} ${IMAGE_NAME}:${IMAGE_TAG}"
 
-                sh 'sleep 5'
+                    sh 'sleep 5'
 
-                echo 'Smoke check - is the container even responding?'
-                sh "curl -f http://host.docker.internal:${API_TEST_PORT}/login.html || exit 1"
+                    echo 'Smoke check - is the container even responding?'
+                    sh "curl -f http://host.docker.internal:${API_TEST_PORT}/login.html || exit 1"
 
-                echo 'Running full API test suite via Newman...'
-                sh """
-                    npx newman run tests/api/CityScoot-API-Tests.postman_collection.json \
-                      --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
-                      --env-var testEmail=\$API_TEST_EMAIL \
-                      --env-var testPassword=\$API_TEST_PASSWORD \
-                      --reporters cli,junit \
-                      --reporter-junit-export newman-report.xml
-                """
+                    echo 'Running full API test suite via Newman...'
+                    sh """
+                        npx newman run tests/api/CityScoot-API-Tests.postman_collection.json \
+                          --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
+                          --env-var testEmail=\$API_TEST_EMAIL \
+                          --env-var testPassword=\$API_TEST_PASSWORD \
+                          --reporters cli,junit \
+                          --reporter-junit-export newman-report.xml
+                    """
+                }
             }
             post {
                 always {
