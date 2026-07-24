@@ -8,9 +8,10 @@
       <div class="hero-eyebrow">Ride More, Worry Less</div>
 
       <h1 class="hero-title">
-        <%= user && String(user.role).toLowerCase() === 'admin' ? 'Wallet
-        Administration' : 'My Bike Wallet' %>
-      </h1>
+  <%= user && String(user.role).toLowerCase() === 'admin'
+    ? 'Wallet Administration'
+    : 'My Bike Wallet' %>
+</h1>
 
       <p class="hero-copy mb-4">
         <% if (user && String(user.role).toLowerCase() === 'admin') { %> Manage
