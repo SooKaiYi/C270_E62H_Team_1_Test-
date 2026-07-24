@@ -27,6 +27,8 @@ pipeline {
         DB_PASSWORD = credentials('db-password')
         DB_NAME = credentials('db-name')
 
+        NVD_API_KEY = credentials('nvd-api-key')
+
         STAGING_URL = 'http://host.docker.internal:3001'
         PRODUCTION_URL = 'http://host.docker.internal:3000'
     }
@@ -56,24 +58,88 @@ pipeline {
 
         stage('Automated Tests') {
             steps {
+                echo 'Running Jest unit tests...'
                 sh 'npm test'
             }
         }
 
-        // SonarQube configuration can be added here.
+        stage('Trivy Filesystem Scan') {
+            steps {
+                echo 'Running Trivy filesystem security scan...'
 
-        // OWASP Dependency-Check configuration can be added here.
+                sh 'mkdir -p security-reports'
 
-        // Quality Gate can be added after all security tools are integrated.
+                sh '''
+                    docker run --rm \
+                      -v "$WORKSPACE:/project" \
+                      -v trivy-cache:/root/.cache/trivy \
+                      aquasec/trivy:latest \
+                      fs \
+                      --scanners vuln,secret,misconfig \
+                      --severity HIGH,CRITICAL \
+                      --exit-code 0 \
+                      --format table \
+                      --output /project/security-reports/trivy-filesystem.txt \
+                      /project
+                '''
+            }
+        }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                echo 'Running OWASP Dependency-Check...'
+
+                sh 'mkdir -p security-reports'
+
+                sh '''
+                    docker run --rm \
+                      -v "$WORKSPACE:/src" \
+                      -v dependency-check-data:/usr/share/dependency-check/data \
+                      -v "$WORKSPACE/security-reports:/report" \
+                      owasp/dependency-check:latest \
+                      --project "CityScoot" \
+                      --scan /src \
+                      --format ALL \
+                      --out /report \
+                      --nvdApiKey "$NVD_API_KEY" \
+                      --nvdApiDelay 3500 \
+                      --nvdMaxRetryCount 5
+                '''
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
+                echo 'Building Docker image...'
+
                 sh """
                     docker build \
                       -t ${IMAGE_NAME}:${IMAGE_TAG} \
                       -t ${IMAGE_NAME}:latest \
                       .
                 """
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                echo 'Running Trivy Docker image scan...'
+
+                sh 'mkdir -p security-reports'
+
+                sh '''
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      -v trivy-cache:/root/.cache/trivy \
+                      -v "$WORKSPACE/security-reports:/reports" \
+                      aquasec/trivy:latest \
+                      image \
+                      --severity HIGH,CRITICAL \
+                      --exit-code 0 \
+                      --format table \
+                      --output /reports/trivy-image.txt \
+                      "${IMAGE_NAME}:${IMAGE_TAG}"
+                '''
             }
         }
 
@@ -130,6 +196,8 @@ pipeline {
 
         stage('Deploy to Staging') {
             steps {
+                echo 'Deploying application to staging...'
+
                 sh '''
                     docker rm -f ${STAGING_CONTAINER} 2>/dev/null || \
                       echo "No existing staging container"
@@ -173,6 +241,8 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
+                echo 'Deploying application to production...'
+
                 sh '''
                     docker rm -f ${PRODUCTION_CONTAINER} 2>/dev/null || \
                       echo "No existing production container"
@@ -220,6 +290,12 @@ pipeline {
         }
 
         always {
+            archiveArtifacts(
+                artifacts: 'security-reports/**',
+                allowEmptyArchive: true,
+                fingerprint: true
+            )
+
             echo "Finished Jenkins build ${BUILD_NUMBER}."
         }
     }
