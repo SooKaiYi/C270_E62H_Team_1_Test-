@@ -1,5 +1,6 @@
 console.log('=== SERVER.JS IS RUNNING ===');
 
+console.log('Loaded DB host:', process.env.DB_HOST);
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
