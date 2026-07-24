@@ -5,7 +5,6 @@ const mapRoutes = require('./routes/mapRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 
 const app = express();
-
 // Read form and JSON data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
