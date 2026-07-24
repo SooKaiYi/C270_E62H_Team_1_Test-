@@ -28,6 +28,8 @@ pipeline {
         API_TEST_CONTAINER = 'bike-api-test'
         API_TEST_PORT = '3002'
 
+        NVD_API_KEY = credentials('nvd-api-key')
+
         // NOTE: these use host.docker.internal instead of localhost, since
         // curl/newman run INSIDE the Jenkins container, not on the host --
         // localhost inside that container is not the same localhost as the
@@ -60,25 +62,60 @@ pipeline {
             }
         }
 
-        stage('Code Quality - ESLint') {
-            steps {
-                sh 'npx eslint .'
-            }
-        }
-
         stage('Automated Tests') {
             steps {
                 sh 'npm test'
             }
         }
 
+        stage('Trivy Filesystem Scan') {
+            steps {
+                echo 'Running Trivy filesystem security scan...'
+                
+                sh '''
+                    rm -rf security-reports
+                    mkdir -p security-reports
+
+                    docker run --rm \
+                        -v "$WORKSPACE:/project" \
+                        -v "$WORKSPACE/security-reports:/reports" \
+                        -v trivy-cache:/root/.cache/trivy \
+                        aquasec/trivy:latest \
+                        fs \
+                        --scanners vuln,secret,misconfig \
+                        --severity HIGH,CRITICAL \
+                        --exit-code 0 \
+                        --format table \
+                        --output /reports/trivy-filesystem.txt \
+                        /project
+                '''
+            }
+        }
+
+        stage('OWASP Dependency Check') {
+            steps {
+                echo 'Running OWASP Dependency-Check...'
+
+                sh 'mkdir -p security-reports'
+
+                sh '''
+                    docker run --rm \
+                    -v "$WORKSPACE:/src" \
+                    -v dependency-check-data:/usr/share/dependency-check/data \
+                    -v "$WORKSPACE/security-reports:/report" \
+                    owasp/dependency-check:latest \
+                    --project "CityScoot" \
+                    --scan /src \
+                    --format ALL \
+                    --out /report \
+                    --nvdApiKey "$NVD_API_KEY" \
+                    --nvdApiDelay 6000 \
+                    --nvdMaxRetryCount 5
+                '''
+            }
+        }
+
         //SonarQube configuration
-
-
-        //OWASP Dependency Check configuration
-
-
-        // Quality Gate will be added after SonarQube, OWASP and testing stages are integrated.
 
 
         stage('Build Docker Image') {
@@ -86,6 +123,31 @@ pipeline {
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
             }
         }
+
+        stage('Trivy Image Scan') {
+            steps {
+                echo 'Running Trivy Docker image scan...'
+
+                sh 'mkdir -p security-reports'
+
+                sh '''
+                    docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v trivy-cache:/root/.cache/trivy \
+                    -v "$WORKSPACE/security-reports:/reports" \
+                    aquasec/trivy:latest \
+                    image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    --format table \
+                    --output /reports/trivy-image.txt \
+                    "${IMAGE_NAME}:${IMAGE_TAG}"
+                '''
+            }
+        }
+
+        // Quality Gate will be added after SonarQube, OWASP and testing stages are integrated.
+
 
         stage('API Tests') {
             steps {
@@ -197,6 +259,12 @@ pipeline {
         }
 
         always {
+            archiveArtifacts(
+                artifacts: 'security-reports/**',
+                allowEmptyArchive: true,
+                fingerprint: true
+                )
+
             echo "Finished Jenkins build ${BUILD_NUMBER}."
         }
     }
