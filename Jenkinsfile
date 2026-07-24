@@ -64,26 +64,28 @@ pipeline {
         }
 
         stage('Trivy Filesystem Scan') {
-            steps {
-                echo 'Running Trivy filesystem security scan...'
+    steps {
+        echo 'Running Trivy filesystem security scan...'
 
-                sh 'mkdir -p security-reports'
+        sh '''
+            rm -rf security-reports
+            mkdir -p security-reports
 
-                sh '''
-                    docker run --rm \
-                      -v "$WORKSPACE:/project" \
-                      -v trivy-cache:/root/.cache/trivy \
-                      aquasec/trivy:latest \
-                      fs \
-                      --scanners vuln,secret,misconfig \
-                      --severity HIGH,CRITICAL \
-                      --exit-code 0 \
-                      --format table \
-                      --output /project/security-reports/trivy-filesystem.txt \
-                      /project
-                '''
-            }
-        }
+            docker run --rm \
+              -v "$WORKSPACE:/project" \
+              -v "$WORKSPACE/security-reports:/reports" \
+              -v trivy-cache:/root/.cache/trivy \
+              aquasec/trivy:latest \
+              fs \
+              --scanners vuln,secret,misconfig \
+              --severity HIGH,CRITICAL \
+              --exit-code 0 \
+              --format table \
+              --output /reports/trivy-filesystem.txt \
+              /project
+        '''
+    }
+}
 
         stage('OWASP Dependency Check') {
             steps {
