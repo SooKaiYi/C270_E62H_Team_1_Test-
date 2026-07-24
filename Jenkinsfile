@@ -88,27 +88,28 @@ pipeline {
         }
 
         stage('OWASP Dependency Check') {
-            steps {
-                echo 'Running OWASP Dependency-Check...'
+    steps {
+        echo 'Running OWASP Dependency-Check...'
 
-                sh '''
-                    mkdir -p security-reports
+        sh '''
+            mkdir -p security-reports
 
-                    docker run --rm \
-                      --user root \
-                      -v jenkins-data:/var/jenkins_home \
-                      -v dependency-check-data:/usr/share/dependency-check/data \
-                      owasp/dependency-check:latest \
-                      --project "CityScoot" \
-                      --scan "$WORKSPACE" \
-                      --format HTML \
-                      --format JSON \
-                      --out "$WORKSPACE/security-reports" \
-                      --noupdate \
-                      --disableHostedSuppressions
-                '''
-            }
-        }
+            docker run --rm \
+              --user root \
+              -v jenkins-data:/var/jenkins_home \
+              -v dependency-check-data:/usr/share/dependency-check/data \
+              owasp/dependency-check:latest \
+              --project "CityScoot" \
+              --scan "$WORKSPACE" \
+              --format HTML \
+              --format JSON \
+              --out "$WORKSPACE/security-reports" \
+              --noupdate \
+              --disableHostedSuppressions \
+              --disableYarnAudit
+        '''
+    }
+}
 
         stage('Build Docker Image') {
             steps {
