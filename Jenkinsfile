@@ -147,7 +147,11 @@ pipeline {
         }
 
         // Quality Gate will be added after SonarQube, OWASP and testing stages are integrated.
-
+        stage('Quality Gate') {
+            steps {
+                echo 'Quality Gate stage placeholder. Implement quality gate checks here.'
+            }
+        }
 
         stage('API Tests') {
             steps {
