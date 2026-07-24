@@ -64,48 +64,48 @@ pipeline {
         }
 
         stage('Trivy Filesystem Scan') {
-    steps {
-        echo 'Running Trivy filesystem security scan...'
+            steps {
+                echo 'Running Trivy filesystem security scan...'
 
-        sh '''
-            rm -rf security-reports
-            mkdir -p security-reports
+                sh '''
+                    rm -rf security-reports
+                    mkdir -p security-reports
 
-            docker run --rm \
-              -v "$WORKSPACE:/project" \
-              -v "$WORKSPACE/security-reports:/reports" \
-              -v trivy-cache:/root/.cache/trivy \
-              aquasec/trivy:latest \
-              fs \
-              --scanners vuln,secret,misconfig \
-              --severity HIGH,CRITICAL \
-              --exit-code 0 \
-              --format table \
-              --output /reports/trivy-filesystem.txt \
-              /project
-        '''
-    }
-}
+                    docker run --rm \
+                      --user root \
+                      -v jenkins-data:/var/jenkins_home \
+                      -v trivy-cache:/root/.cache/trivy \
+                      aquasec/trivy:latest \
+                      fs \
+                      --scanners vuln,secret,misconfig \
+                      --severity HIGH,CRITICAL \
+                      --exit-code 0 \
+                      --format table \
+                      --output "$WORKSPACE/security-reports/trivy-filesystem.txt" \
+                      "$WORKSPACE"
+                '''
+            }
+        }
 
         stage('OWASP Dependency Check') {
             steps {
                 echo 'Running OWASP Dependency-Check...'
 
-                sh 'mkdir -p security-reports'
-
                 sh '''
+                    mkdir -p security-reports
+
                     docker run --rm \
-                      -v "$WORKSPACE:/src" \
+                      --user root \
+                      -v jenkins-data:/var/jenkins_home \
                       -v dependency-check-data:/usr/share/dependency-check/data \
-                      -v "$WORKSPACE/security-reports:/report" \
                       owasp/dependency-check:latest \
                       --project "CityScoot" \
-                      --scan /src \
-                      --format ALL \
-                      --out /report \
-                      --nvdApiKey "$NVD_API_KEY" \
-                      --nvdApiDelay 6000 \
-                      --nvdMaxRetryCount 5
+                      --scan "$WORKSPACE" \
+                      --format HTML \
+                      --format JSON \
+                      --out "$WORKSPACE/security-reports" \
+                      --noupdate \
+                      --disableHostedSuppressions
                 '''
             }
         }
@@ -127,19 +127,20 @@ pipeline {
             steps {
                 echo 'Running Trivy Docker image scan...'
 
-                sh 'mkdir -p security-reports'
-
                 sh '''
+                    mkdir -p security-reports
+
                     docker run --rm \
+                      --user root \
                       -v /var/run/docker.sock:/var/run/docker.sock \
+                      -v jenkins-data:/var/jenkins_home \
                       -v trivy-cache:/root/.cache/trivy \
-                      -v "$WORKSPACE/security-reports:/reports" \
                       aquasec/trivy:latest \
                       image \
                       --severity HIGH,CRITICAL \
                       --exit-code 0 \
                       --format table \
-                      --output /reports/trivy-image.txt \
+                      --output "$WORKSPACE/security-reports/trivy-image.txt" \
                       "${IMAGE_NAME}:${IMAGE_TAG}"
                 '''
             }
@@ -223,7 +224,6 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
-
                         sh "curl -f ${STAGING_URL}/login.html"
                     }
                 }
@@ -268,7 +268,6 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
-
                         sh "curl -f ${PRODUCTION_URL}/login.html"
                     }
                 }
