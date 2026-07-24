@@ -148,55 +148,55 @@ pipeline {
         }
 
         stage('API Tests') {
-            steps {
-                sh "docker rm -f ${API_TEST_CONTAINER} || true"
+    steps {
+        sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
-                sh '''
-                    docker run -d \
-                      -p ${API_TEST_PORT}:3000 \
-                      --name ${API_TEST_CONTAINER} \
-                      -e DB_HOST="$DB_HOST" \
-                      -e DB_PORT="$DB_PORT" \
-                      -e DB_USER="$DB_USER" \
-                      -e DB_PASSWORD="$DB_PASSWORD" \
-                      -e DB_NAME="$DB_NAME" \
-                      -e PORT=3000 \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
+        sh '''
+            docker run -d \
+              -p ${API_TEST_PORT}:3000 \
+              --name ${API_TEST_CONTAINER} \
+              -e DB_HOST="$DB_HOST" \
+              -e DB_PORT="$DB_PORT" \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e DB_NAME="$DB_NAME" \
+              -e PORT=3000 \
+              ${IMAGE_NAME}:${IMAGE_TAG}
+        '''
 
-                sh 'sleep 8'
+        sh 'sleep 8'
 
-                echo 'Checking whether API test container is responding...'
+        echo 'Checking whether API test container is responding...'
 
-                sh '''
-                    curl -f \
-                      http://host.docker.internal:${API_TEST_PORT}/login.html
-                '''
+        sh '''
+            curl -f \
+              http://host.docker.internal:${API_TEST_PORT}/login.html
+        '''
 
-                echo 'Running Newman API tests...'
+        echo 'Running Newman API tests...'
 
-                sh '''
-                    npx newman run \
-                      tests/api/CityScoot-API-Tests.postman_collection.json \
-                      --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
-                      --env-var testEmail="$API_TEST_EMAIL" \
-                      --env-var testPassword="$API_TEST_PASSWORD" \
-                      --reporters cli,junit \
-                      --reporter-junit-export newman-report.xml
-                '''
-            }
+        sh '''
+            npx newman run \
+              tests/api/CityScoot-API-Tests.postman_collection.json \
+              --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
+              --env-var testEmail="$API_TEST_EMAIL" \
+              --env-var testPassword="$API_TEST_PASSWORD" \
+              --reporters cli,junit \
+              --reporter-junit-export newman-report.xml
+        '''
+    }
 
-            post {
-                always {
-                    sh "docker rm -f ${API_TEST_CONTAINER} || true"
+    post {
+        always {
+            sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
-                    junit(
-                        allowEmptyResults: true,
-                        testResults: 'newman-report.xml'
-                    )
-                }
-            }
+            junit(
+                allowEmptyResults: true,
+                testResults: 'newman-report.xml'
+            )
         }
+    }
+}
 
         stage('Deploy to Staging') {
             steps {
