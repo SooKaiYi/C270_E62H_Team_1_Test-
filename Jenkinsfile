@@ -104,7 +104,7 @@ pipeline {
                       --format ALL \
                       --out /report \
                       --nvdApiKey "$NVD_API_KEY" \
-                      --nvdApiDelay 3500 \
+                      --nvdApiDelay 6000 \
                       --nvdMaxRetryCount 5
                 '''
             }
