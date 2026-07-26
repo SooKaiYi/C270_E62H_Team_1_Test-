@@ -62,6 +62,16 @@ pipeline {
                 sh 'npm test'
             }
         }
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Running SonarQube code analysis...'
+
+                withSonarQubeEnv('CityScoot-SonarQube') {
+                    sh 'npx @sonar/scan'
+                }
+            }
+        }   
+        
 
         stage('Trivy Filesystem Scan') {
             steps {
