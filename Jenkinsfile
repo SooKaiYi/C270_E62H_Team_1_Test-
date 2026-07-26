@@ -27,8 +27,6 @@ pipeline {
         DB_PASSWORD = credentials('db-password')
         DB_NAME = credentials('db-name')
 
-        NVD_API_KEY = credentials('nvd-api-key')
-
         STAGING_URL = 'http://host.docker.internal:3001'
         PRODUCTION_URL = 'http://host.docker.internal:3000'
     }
@@ -42,6 +40,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
+                echo 'Installing project dependencies...'
                 sh 'npm ci'
             }
         }
@@ -63,7 +62,16 @@ pipeline {
             }
         }
 
-        
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Running SonarQube code analysis...'
+
+                withSonarQubeEnv('CityScoot-SonarQube') {
+                    sh 'npx @sonar/scan'
+                }
+            }
+        }
+
         stage('Trivy Filesystem Scan') {
             steps {
                 echo 'Running Trivy filesystem security scan...'
@@ -96,31 +104,21 @@ pipeline {
                     mkdir -p security-reports
 
                     docker run --rm \
-                    --user root \
-                    -v jenkins-data:/var/jenkins_home \
-                    -v dependency-check-data:/usr/share/dependency-check/data \
-                    owasp/dependency-check:latest \
-                    --project "CityScoot" \
-                    --scan "$WORKSPACE" \
-                    --format HTML \
-                    --format JSON \
-                    --out "$WORKSPACE/security-reports" \
-                    --noupdate \
-                    --disableHostedSuppressions \
-                    --disableYarnAudit
+                      --user root \
+                      -v jenkins-data:/var/jenkins_home \
+                      -v dependency-check-data:/usr/share/dependency-check/data \
+                      owasp/dependency-check:latest \
+                      --project "CityScoot" \
+                      --scan "$WORKSPACE" \
+                      --format HTML \
+                      --format JSON \
+                      --out "$WORKSPACE/security-reports" \
+                      --noupdate \
+                      --disableHostedSuppressions \
+                      --disableYarnAudit
                 '''
             }
         }
-
-        stage('SonarQube Analysis') {
-            steps {
-                echo 'Running SonarQube code analysis...'
-
-                withSonarQubeEnv('CityScoot-SonarQube') {
-                    sh 'npx @sonar/scan'
-                }
-            }
-        }   
 
         stage('Build Docker Image') {
             steps {
@@ -143,16 +141,15 @@ pipeline {
                     mkdir -p security-reports
 
                     docker run --rm \
-                      --user root \
                       -v /var/run/docker.sock:/var/run/docker.sock \
-                      -v jenkins-data:/var/jenkins_home \
                       -v trivy-cache:/root/.cache/trivy \
+                      -v "$WORKSPACE/security-reports:/reports" \
                       aquasec/trivy:latest \
                       image \
                       --severity HIGH,CRITICAL \
                       --exit-code 0 \
                       --format table \
-                      --output "$WORKSPACE/security-reports/trivy-image.txt" \
+                      --output /reports/trivy-image.txt \
                       "${IMAGE_NAME}:${IMAGE_TAG}"
                 '''
             }
@@ -177,45 +174,53 @@ pipeline {
 
         stage('API Tests') {
             steps {
+                echo 'Starting temporary API test container...'
+
                 sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
                 sh '''
                     docker run -d \
-                    -p ${API_TEST_PORT}:3000 \
-                    --name ${API_TEST_CONTAINER} \
-                    -e DB_HOST="$DB_HOST" \
-                    -e DB_PORT="$DB_PORT" \
-                    -e DB_USER="$DB_USER" \
-                    -e DB_PASSWORD="$DB_PASSWORD" \
-                    -e DB_NAME="$DB_NAME" \
-                    -e PORT=3000 \
-                    ${IMAGE_NAME}:${IMAGE_TAG}
+                      -p ${API_TEST_PORT}:3000 \
+                      --name ${API_TEST_CONTAINER} \
+                      -e DB_HOST="$DB_HOST" \
+                      -e DB_PORT="$DB_PORT" \
+                      -e DB_USER="$DB_USER" \
+                      -e DB_PASSWORD="$DB_PASSWORD" \
+                      -e DB_NAME="$DB_NAME" \
+                      -e PORT=3000 \
+                      ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
 
-                sh 'sleep 8'
+                echo 'Waiting for API test container to respond...'
 
-                echo 'Checking whether API test container is responding...'
+                script {
+                    retry(5) {
+                        sleep time: 3, unit: 'SECONDS'
 
-                sh '''
-                    curl -f \
-                        http://host.docker.internal:${API_TEST_PORT}/login.html
-                '''
+                        sh '''
+                            curl -f \
+                              http://host.docker.internal:${API_TEST_PORT}/login.html
+                        '''
+                    }
+                }
 
                 echo 'Running Newman API tests...'
 
                 sh '''
                     npx newman run \
-                        tests/api/CityScoot-API-Tests.postman_collection.json \
-                    --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
-                    --env-var testEmail="$API_TEST_EMAIL" \
-                    --env-var testPassword="$API_TEST_PASSWORD" \
-                    --reporters cli,junit \
-                    --reporter-junit-export newman-report.xml
+                      tests/api/CityScoot-API-Tests.postman_collection.json \
+                      --env-var baseUrl=http://host.docker.internal:${API_TEST_PORT} \
+                      --env-var testEmail="$API_TEST_EMAIL" \
+                      --env-var testPassword="$API_TEST_PASSWORD" \
+                      --reporters cli,junit \
+                      --reporter-junit-export newman-report.xml
                 '''
             }
 
             post {
                 always {
+                    echo 'Removing temporary API test container...'
+
                     sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
                     junit(
@@ -225,7 +230,6 @@ pipeline {
                 }
             }
         }
-    
 
         stage('Deploy to Staging') {
             steps {
@@ -241,6 +245,8 @@ pipeline {
 
         stage('Verify Staging') {
             steps {
+                echo 'Verifying staging deployment...'
+
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
@@ -275,6 +281,8 @@ pipeline {
 
         stage('Verify Production') {
             steps {
+                echo 'Verifying production deployment...'
+
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
