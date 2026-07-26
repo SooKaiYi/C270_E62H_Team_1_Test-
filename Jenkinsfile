@@ -53,6 +53,12 @@ pipeline {
 
                 echo 'Running Prettier formatting check...'
                 sh 'npm run format:check'
+                echo 'Running JavaScript & EJS Quality Checks...'
+        bat 'npm run lint'
+        bat 'npm run format:check'
+
+        echo 'Running Dockerfile Quality Checks (Hadolint)...'
+        bat 'docker run --rm -i hadolint/hadolint < Dockerfile
             }
         }
 
