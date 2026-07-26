@@ -31,7 +31,12 @@
       "name": "2 - Login",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": "{{baseUrl}}/api/auth/login",
         "body": {
           "mode": "raw",
@@ -82,7 +87,12 @@
       "name": "4 - Calculate Ride Points",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": "{{baseUrl}}/api/rewards/calculate",
         "body": {
           "mode": "raw",
@@ -110,7 +120,12 @@
       "name": "5 - Redeem - Insufficient Balance Is Rejected",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
         "url": "{{baseUrl}}/api/rewards/redeem",
         "body": {
           "mode": "raw",
@@ -157,16 +172,19 @@
       "name": "7 - Auth Guard - Rejects Unauthenticated Access",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/rewards",
-        "header": [{ "key": "Cookie", "value": "" }]
+        "url": "{{baseUrl}}/rewards"
       },
       "event": [
         {
           "listen": "prerequest",
           "script": {
             "exec": [
-              "// Clear cookies just for this one request to simulate a logged-out visitor.",
-              "pm.cookies.clear ? pm.cookies.clear() : null;"
+              "const jar = pm.cookies.jar();",
+              "jar.clear(pm.variables.replaceIn('{{baseUrl}}'), function (error) {",
+              "    if (error) {",
+              "        console.log('Cookie clear error:', error);",
+              "    }",
+              "});"
             ]
           }
         },
@@ -174,11 +192,9 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Unauthenticated request is redirected, not shown the page', function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([302, 200]);",
-              "    if (pm.response.code === 200) {",
-              "        pm.expect(pm.response.text()).to.include('login');",
-              "    }",
+              "pm.test('Unauthenticated request is redirected to login', function () {",
+              "    pm.response.to.have.status(200);",
+              "    pm.expect(pm.response.text().toLowerCase()).to.include('login');",
               "});"
             ]
           }
