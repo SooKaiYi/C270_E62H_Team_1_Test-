@@ -62,17 +62,8 @@ pipeline {
                 sh 'npm test'
             }
         }
-        stage('SonarQube Analysis') {
-            steps {
-                echo 'Running SonarQube code analysis...'
 
-                withSonarQubeEnv('CityScoot-SonarQube') {
-                    sh 'npx @sonar/scan'
-                }
-            }
-        }   
         
-
         stage('Trivy Filesystem Scan') {
             steps {
                 echo 'Running Trivy filesystem security scan...'
@@ -129,7 +120,7 @@ pipeline {
                     sh 'npx @sonar/scan'
                 }
             }
-        }
+        }   
 
         stage('Build Docker Image') {
             steps {
@@ -167,42 +158,19 @@ pipeline {
             }
         }
 
-        stage('Trivy Image Scan') {
-            steps {
-                echo 'Running Trivy Docker image scan...'
-
-                sh 'mkdir -p security-reports'
-
-                sh '''
-                    docker run --rm \
-                    -v /var/run/docker.sock:/var/run/docker.sock \
-                    -v trivy-cache:/root/.cache/trivy \
-                    -v "$WORKSPACE/security-reports:/reports" \
-                    aquasec/trivy:latest \
-                    image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 0 \
-                    --format table \
-                    --output /reports/trivy-image.txt \
-                    "${IMAGE_NAME}:${IMAGE_TAG}"
-                '''
-            }
-        }
 
         stage('Quality Gate') {
             steps {
-                script {
-                    echo 'Checking Quality Gate...'
-                
-                    echo '✓ Code Quality Checks passed'
-                    echo '✓ Automated Tests passed'
-                    echo '✓ SonarQube Analysis completed'
-                    echo '✓ Trivy Filesystem Scan completed'
-                    echo '✓ OWASP Dependency Check completed'
-                    echo '✓ Docker Image Build completed'
-                    echo '✓ Trivy Image Scan completed'
-                
-                    echo 'Current pipeline checks passed. Continuing to API tests.'
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qualityGate = waitForQualityGate()
+
+                        if (qualityGate.status != 'OK') {
+                            error "Quality Gate failed: ${qualityGate.status}"
+                        }
+
+                        echo "Quality Gate passed."
+                    }
                 }
             }
         }
@@ -244,20 +212,20 @@ pipeline {
                     --reporters cli,junit \
                     --reporter-junit-export newman-report.xml
                 '''
-        }
+            }
 
-        post {
-            always {
-                sh "docker rm -f ${API_TEST_CONTAINER} || true"
+            post {
+                always {
+                    sh "docker rm -f ${API_TEST_CONTAINER} || true"
 
-                junit(
-                    allowEmptyResults: true,
-                    testResults: 'newman-report.xml'
-                )
+                    junit(
+                        allowEmptyResults: true,
+                        testResults: 'newman-report.xml'
+                    )
+                }
             }
         }
-    }
-}
+    
 
         stage('Deploy to Staging') {
             steps {
