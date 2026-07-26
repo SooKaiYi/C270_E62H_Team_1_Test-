@@ -210,22 +210,12 @@ pipeline {
 
         stage('Deploy to Staging') {
             steps {
-                echo 'Deploying application to staging...'
+                echo 'Deploying application to staging using Ansible...'
 
                 sh '''
-                    docker rm -f ${STAGING_CONTAINER} 2>/dev/null || \
-                      echo "No existing staging container"
-
-                    docker run -d \
-                      -p 3001:3000 \
-                      --name ${STAGING_CONTAINER} \
-                      -e DB_HOST="$DB_HOST" \
-                      -e DB_PORT="$DB_PORT" \
-                      -e DB_USER="$DB_USER" \
-                      -e DB_PASSWORD="$DB_PASSWORD" \
-                      -e DB_NAME="$DB_NAME" \
-                      -e PORT=3000 \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    ansible-playbook \
+                      -i ansible/inventories/hosts.ini \
+                      ansible/playbooks/deploy-staging.yml
                 '''
             }
         }
@@ -254,22 +244,12 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                echo 'Deploying application to production...'
+                echo 'Deploying application to production using Ansible...'
 
                 sh '''
-                    docker rm -f ${PRODUCTION_CONTAINER} 2>/dev/null || \
-                      echo "No existing production container"
-
-                    docker run -d \
-                      -p 3000:3000 \
-                      --name ${PRODUCTION_CONTAINER} \
-                      -e DB_HOST="$DB_HOST" \
-                      -e DB_PORT="$DB_PORT" \
-                      -e DB_USER="$DB_USER" \
-                      -e DB_PASSWORD="$DB_PASSWORD" \
-                      -e DB_NAME="$DB_NAME" \
-                      -e PORT=3000 \
-                      ${IMAGE_NAME}:${IMAGE_TAG}
+                    ansible-playbook \
+                      -i ansible/inventories/hosts.ini \
+                      ansible/playbooks/deploy-production.yml
                 '''
             }
         }

@@ -1,0 +1,34 @@
+---
+- name: Deploy CityScoot to staging
+  hosts: deployment_server
+  become: false
+
+  vars:
+    container_name: bike-staging
+    image_name: bike-app
+    image_tag: "{{ lookup('env', 'BUILD_NUMBER') | default('latest', true) }}"
+    host_port: 3001
+    container_port: 3000
+
+  tasks:
+    - name: Remove existing staging container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+        force_kill: true
+
+    - name: Start staging container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ host_port }}:{{ container_port }}"
+        env:
+          DB_HOST: "{{ lookup('env', 'DB_HOST') }}"
+          DB_PORT: "{{ lookup('env', 'DB_PORT') }}"
+          DB_USER: "{{ lookup('env', 'DB_USER') }}"
+          DB_PASSWORD: "{{ lookup('env', 'DB_PASSWORD') }}"
+          DB_NAME: "{{ lookup('env', 'DB_NAME') }}"
+          PORT: "3000"
