@@ -34,6 +34,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                echo 'Checking out source code...'
                 checkout scm
             }
         }
@@ -52,19 +53,16 @@ pipeline {
 
                 echo 'Running Prettier formatting check...'
                 sh 'npm run format:check'
-                echo 'Running JavaScript & EJS Quality Checks...'
-        bat 'npm run lint'
-        bat 'npm run format:check'
 
-        echo 'Running Dockerfile Quality Checks (Hadolint)...'
-        bat 'docker run --rm -i hadolint/hadolint < Dockerfile
+                echo 'Running Dockerfile quality checks with Hadolint...'
+                sh 'docker run --rm -i hadolint/hadolint < Dockerfile'
             }
         }
 
         stage('Automated Tests') {
             steps {
                 echo 'Running Jest unit tests...'
-                sh 'npm test'
+                sh 'npm test -- --runInBand'
             }
         }
 
@@ -161,9 +159,10 @@ pipeline {
             }
         }
 
-
         stage('Quality Gate') {
             steps {
+                echo 'Waiting for SonarQube Quality Gate result...'
+
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
                         def qualityGate = waitForQualityGate()
@@ -172,7 +171,7 @@ pipeline {
                             error "Quality Gate failed: ${qualityGate.status}"
                         }
 
-                        echo "Quality Gate passed."
+                        echo 'Quality Gate passed.'
                     }
                 }
             }
@@ -256,6 +255,7 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
+
                         sh "curl -f ${STAGING_URL}/login.html"
                     }
                 }
@@ -292,6 +292,7 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
+
                         sh "curl -f ${PRODUCTION_URL}/login.html"
                     }
                 }
@@ -315,6 +316,8 @@ pipeline {
         }
 
         always {
+            echo 'Archiving security scan reports...'
+
             archiveArtifacts(
                 artifacts: 'security-reports/**',
                 allowEmptyArchive: true,
