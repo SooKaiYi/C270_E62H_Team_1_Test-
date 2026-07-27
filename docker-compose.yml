@@ -1,0 +1,49 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins
+    restart: unless-stopped
+    user: root
+
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  bike-app:
+    profiles:
+      - app
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: bike-app:local
+    container_name: bike-container
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      PORT: 3000
+
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  jenkins-data:
+    external: true
+    name: jenkins-data
