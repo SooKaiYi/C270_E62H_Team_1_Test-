@@ -161,16 +161,20 @@ pipeline {
             }
         }
 
-        stage('Pipeline Check Summary') {
+
+        stage('Quality Gate') {
             steps {
-                echo 'Code quality checks completed.'
-                echo 'Automated tests completed.'
-                echo 'SonarQube analysis completed.'
-                echo 'Trivy filesystem scan completed.'
-                echo 'OWASP Dependency-Check completed.'
-                echo 'Docker image build completed.'
-                echo 'Trivy image scan completed.'
-                echo 'Continuing to API tests.'
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qualityGate = waitForQualityGate()
+
+                        if (qualityGate.status != 'OK') {
+                            error "Quality Gate failed: ${qualityGate.status}"
+                        }
+
+                        echo "Quality Gate passed."
+                    }
+                }
             }
         }
 
