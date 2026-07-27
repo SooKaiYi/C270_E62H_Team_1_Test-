@@ -2,13 +2,14 @@
 - name: Deploy CityScoot to staging
   hosts: deployment_server
   become: false
+  gather_facts: false
 
   vars:
     container_name: bike-staging
     image_name: bike-app
     image_tag: "{{ lookup('env', 'BUILD_NUMBER') | default('latest', true) }}"
-    host_port: 3001
-    container_port: 3000
+    host_port: "3001"
+    container_port: "3000"
 
   tasks:
     - name: Remove existing staging container
