@@ -29,6 +29,9 @@ pipeline {
 
         STAGING_URL = 'http://host.docker.internal:3001'
         PRODUCTION_URL = 'http://host.docker.internal:3000'
+
+        PROMETHEUS_URL = 'http://host.docker.internal:9090'
+        GRAFANA_URL = 'http://host.docker.internal:3003'
     }
 
     stages {
@@ -298,12 +301,128 @@ pipeline {
                 }
             }
         }
+
+        stage('Verify Prometheus') {
+            steps {
+                echo 'Verifying Prometheus monitoring...'
+
+                script {
+                    retry(5) {
+                        sleep time: 3, unit: 'SECONDS'
+
+                        sh '''
+                            echo "Checking Prometheus health..."
+
+                            curl -fsS \
+                              "${PROMETHEUS_URL}/-/healthy"
+
+                            echo ""
+                            echo "Prometheus is healthy."
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify CityScoot Monitoring Target') {
+            steps {
+                echo 'Checking whether Prometheus is monitoring CityScoot...'
+
+                script {
+                    retry(5) {
+                        sleep time: 3, unit: 'SECONDS'
+
+                        sh '''
+                            RESPONSE=$(curl -fsS \
+                              "${PROMETHEUS_URL}/api/v1/query?query=up%7Bjob%3D%22cityscoot%22%7D")
+
+                            echo "$RESPONSE"
+
+                            echo "$RESPONSE" | node -e "
+                                let data = '';
+
+                                process.stdin.on('data', chunk => {
+                                    data += chunk;
+                                });
+
+                                process.stdin.on('end', () => {
+                                    const response = JSON.parse(data);
+                                    const results =
+                                        response?.data?.result || [];
+
+                                    const targetIsUp = results.some(
+                                        item =>
+                                            item.metric?.job === 'cityscoot' &&
+                                            item.value?.[1] === '1'
+                                    );
+
+                                    if (!targetIsUp) {
+                                        console.error(
+                                            'CityScoot Prometheus target is DOWN or missing.'
+                                        );
+                                        process.exit(1);
+                                    }
+
+                                    console.log(
+                                        'CityScoot Prometheus target is UP.'
+                                    );
+                                });
+                            "
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify Grafana') {
+            steps {
+                echo 'Verifying Grafana availability...'
+
+                script {
+                    retry(5) {
+                        sleep time: 3, unit: 'SECONDS'
+
+                        sh '''
+                            RESPONSE=$(curl -fsS \
+                              "${GRAFANA_URL}/api/health")
+
+                            echo "$RESPONSE"
+
+                            echo "$RESPONSE" | node -e "
+                                let data = '';
+
+                                process.stdin.on('data', chunk => {
+                                    data += chunk;
+                                });
+
+                                process.stdin.on('end', () => {
+                                    const response = JSON.parse(data);
+
+                                    if (response.database !== 'ok') {
+                                        console.error(
+                                            'Grafana database health check failed.'
+                                        );
+                                        process.exit(1);
+                                    }
+
+                                    console.log(
+                                        'Grafana is healthy and available.'
+                                    );
+                                });
+                            "
+                        '''
+                    }
+                }
+            }
+        }
     }
 
     post {
         success {
             echo 'CI/CD pipeline completed successfully.'
             echo "Docker image created: ${IMAGE_NAME}:${IMAGE_TAG}"
+            echo 'Prometheus monitoring target verified.'
+            echo 'Grafana availability verified.'
         }
 
         failure {
