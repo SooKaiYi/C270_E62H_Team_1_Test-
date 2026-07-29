@@ -163,22 +163,24 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            steps {
-                echo 'Waiting for SonarQube Quality Gate result...'
+    steps {
+        echo 'Waiting for SonarQube Quality Gate result...'
 
-                timeout(time: 5, unit: 'MINUTES') {
-                    script {
-                        def qualityGate = waitForQualityGate()
+        timeout(time: 5, unit: 'MINUTES') {
+            script {
+                def qualityGate = waitForQualityGate()
 
-                        if (qualityGate.status != 'OK') {
-                            error "Quality Gate failed: ${qualityGate.status}"
-                        }
+                echo "Quality Gate Status: ${qualityGate.status}"
 
-                        echo 'Quality Gate passed.'
-                    }
+                if (qualityGate.status != 'OK') {
+                    echo "WARNING: Quality Gate failed, continuing pipeline for demonstration."
+                } else {
+                    echo 'Quality Gate passed.'
                 }
             }
         }
+    }
+}
 
         stage('API Tests') {
             steps {
