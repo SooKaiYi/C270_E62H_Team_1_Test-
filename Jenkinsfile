@@ -163,24 +163,24 @@ pipeline {
         }
 
         stage('Quality Gate') {
-    steps {
-        echo 'Waiting for SonarQube Quality Gate result...'
+            steps {
+                echo 'Waiting for SonarQube Quality Gate result...'
 
-        timeout(time: 5, unit: 'MINUTES') {
-            script {
-                def qualityGate = waitForQualityGate()
+                timeout(time: 5, unit: 'MINUTES') {
+                    script {
+                        def qualityGate = waitForQualityGate()
 
-                echo "Quality Gate Status: ${qualityGate.status}"
+                        echo "Quality Gate Status: ${qualityGate.status}"
 
-                if (qualityGate.status != 'OK') {
-                    echo "WARNING: Quality Gate failed, continuing pipeline for demonstration."
-                } else {
-                    echo 'Quality Gate passed.'
+                        if (qualityGate.status != 'OK') {
+                            echo 'WARNING: Quality Gate failed, continuing pipeline for demonstration.'
+                        } else {
+                            echo 'Quality Gate passed.'
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
         stage('API Tests') {
             steps {
@@ -229,6 +229,10 @@ pipeline {
 
             post {
                 always {
+                    echo 'Showing API test container logs...'
+
+                    sh "docker logs ${API_TEST_CONTAINER} || true"
+
                     echo 'Removing temporary API test container...'
 
                     sh "docker rm -f ${API_TEST_CONTAINER} || true"
@@ -260,7 +264,6 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
-
                         sh "curl -f ${STAGING_URL}/login.html"
                     }
                 }
@@ -297,7 +300,6 @@ pipeline {
                 script {
                     retry(5) {
                         sleep time: 3, unit: 'SECONDS'
-
                         sh "curl -f ${PRODUCTION_URL}/login.html"
                     }
                 }
@@ -314,10 +316,7 @@ pipeline {
 
                         sh '''
                             echo "Checking Prometheus health..."
-
-                            curl -fsS \
-                              "${PROMETHEUS_URL}/-/healthy"
-
+                            curl -fsS "${PROMETHEUS_URL}/-/healthy"
                             echo ""
                             echo "Prometheus is healthy."
                         '''
@@ -349,8 +348,7 @@ pipeline {
 
                                 process.stdin.on('end', () => {
                                     const response = JSON.parse(data);
-                                    const results =
-                                        response?.data?.result || [];
+                                    const results = response?.data?.result || [];
 
                                     const targetIsUp = results.some(
                                         item =>
@@ -385,8 +383,7 @@ pipeline {
                         sleep time: 3, unit: 'SECONDS'
 
                         sh '''
-                            RESPONSE=$(curl -fsS \
-                              "${GRAFANA_URL}/api/health")
+                            RESPONSE=$(curl -fsS "${GRAFANA_URL}/api/health")
 
                             echo "$RESPONSE"
 
