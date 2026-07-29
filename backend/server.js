@@ -5,10 +5,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 
-const {
-  metricsMiddleware,
-  metricsHandler,
-} = require('./metrics');
+const { metricsMiddleware, metricsHandler } = require('./metrics');
 
 const app = express();
 
@@ -84,7 +81,6 @@ app.use('/rentals', rentalRoutes);
 app.use('/', trackerRoutes);
 app.use('/', leaderboardRoutes);
 app.use('/repair', bikeRepairFeatureRoutes);
-
 
 // =======================================
 // 404 Page
