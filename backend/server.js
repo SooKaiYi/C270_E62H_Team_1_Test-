@@ -5,6 +5,11 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 
+const {
+  metricsMiddleware,
+  metricsHandler,
+} = require('./metrics');
+
 const app = express();
 
 // =======================================
@@ -12,6 +17,12 @@ const app = express();
 // =======================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Prometheus checks this endpoint without being counted as user traffic.
+app.get('/metrics', metricsHandler);
+
+// Count normal CityScoot requests.
+app.use(metricsMiddleware);
 
 // =======================================
 // Static Files
@@ -73,6 +84,7 @@ app.use('/rentals', rentalRoutes);
 app.use('/', trackerRoutes);
 app.use('/', leaderboardRoutes);
 app.use('/repair', bikeRepairFeatureRoutes);
+
 
 // =======================================
 // 404 Page
